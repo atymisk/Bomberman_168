@@ -82,22 +82,24 @@ public class Client : MonoBehaviour
 			if(GameObject.Find("reg")!= null)
 			{
 				registerinfo = GameObject.Find("reg").GetComponentInChildren<register>().getsendinfo()+"<EOF>";
-				Debug.Log(registerinfo);
-				Send(client,registerinfo,send_so);
+				//Debug.Log(registerinfo);
+				/*Send(client,registerinfo,send_so);//garbage collected?
 				send_so.sendDone.WaitOne(5000);
 				Receive(recv_so);
 				recv_so.receiveDone.WaitOne(5000);
-				Debug.Log("Attempting registering: " + recv_so.response);
+				Debug.Log("Attempting registering: " + recv_so.response);*/
+				Application.LoadLevel("LogInScreen");
 			}
 			else if(GameObject.Find("login")!= null)
 			{
 				logininfo = GameObject.Find("login").GetComponentInChildren<login>().strsend()+"<EOF>";
-				Debug.Log (logininfo);
-				Send(client,logininfo,send_so);
+				//Debug.Log (logininfo);
+				/*Send(client,logininfo,send_so);
 				send_so.sendDone.WaitOne(5000);
 				Receive(recv_so);
 				recv_so.receiveDone.WaitOne(5000);
-				Debug.Log("Attempting login:" + recv_so.response);
+				Debug.Log("Attempting login:" + recv_so.response);*/
+				Application.LoadLevel(1);
 			}
 		}
 		catch (Exception e)
