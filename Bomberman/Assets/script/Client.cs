@@ -33,6 +33,8 @@ public class Client : MonoBehaviour
 	private const int port = 11000;
 	static string[] stringSeparators = new string[] { "<EOF>" };
 
+	string registerinfo="";
+	string logininfo="";
 
 	public void StartConnection()
 	{
@@ -75,7 +77,28 @@ public class Client : MonoBehaviour
 			Debug.Log ("Response received : " + recv_so.response);
 
 			// Load the game screen
-			Application.LoadLevel(1);
+			//Application.LoadLevel(1);
+
+			if(GameObject.Find("reg")!= null)
+			{
+				registerinfo = GameObject.Find("reg").GetComponentInChildren<register>().getsendinfo()+"<EOF>";
+				Debug.Log(registerinfo);
+				Send(client,registerinfo,send_so);
+				send_so.sendDone.WaitOne(5000);
+				Receive(recv_so);
+				recv_so.receiveDone.WaitOne(5000);
+				Debug.Log("Attempting registering: " + recv_so.response);
+			}
+			else if(GameObject.Find("login")!= null)
+			{
+				logininfo = GameObject.Find("login").GetComponentInChildren<login>().strsend()+"<EOF>";
+				Debug.Log (logininfo);
+				Send(client,logininfo,send_so);
+				send_so.sendDone.WaitOne(5000);
+				Receive(recv_so);
+				recv_so.receiveDone.WaitOne(5000);
+				Debug.Log("Attempting login:" + recv_so.response);
+			}
 		}
 		catch (Exception e)
 		{
