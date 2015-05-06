@@ -24,6 +24,7 @@ public class register : MonoBehaviour {
 		}
 		u = pass.text;
 		ok = (u.Length >= 6 && u.Length <=12);//need to check against special characters
+		//hash u(the password)
 		tosend += u + "|";
 		if(!ok)
 		{

@@ -35,7 +35,7 @@ public class Client : MonoBehaviour
 
 	string registerinfo="";
 	string logininfo="";
-
+	private Socket myclient;
 	public void StartConnection()
 	{
 		// Connect to a remote device.
@@ -60,7 +60,7 @@ public class Client : MonoBehaviour
 			
 			// Waits for 5 seconds for connection to be done
 			send_so.connectDone.WaitOne(5000);
-			
+
 			// Send test data to the remote device.
 			Send(client,"This is a test<EOF>", send_so);
 			send_so.sendDone.WaitOne(5000);
@@ -72,7 +72,7 @@ public class Client : MonoBehaviour
 			
 			Receive(recv_so);
 			recv_so.receiveDone.WaitOne(5000);
-			
+			myclient = client;
 			// Write the response to the console.
 			Debug.Log ("Response received : " + recv_so.response);
 
@@ -94,12 +94,17 @@ public class Client : MonoBehaviour
 			{
 				logininfo = GameObject.Find("login").GetComponentInChildren<login>().strsend()+"<EOF>";
 				//Debug.Log (logininfo);
-				/*Send(client,logininfo,send_so);
-				send_so.sendDone.WaitOne(5000);
-				Receive(recv_so);
-				recv_so.receiveDone.WaitOne(5000);
-				Debug.Log("Attempting login:" + recv_so.response);*/
-				Application.LoadLevel(1);
+				/*
+				StateObject so = new StateObject();
+				so.workSocket = client;
+				Send(client,logininfo,so);
+				so.sendDone.WaitOne(5000);
+				StateObject ro = new StateObject();
+				ro.workSocket = client;
+				Receive(ro);
+				ro.receiveDone.WaitOne(5000);
+				Debug.Log("Attempting login:" + ro.response);*/
+			//	Application.LoadLevel(1);
 			}
 		}
 		catch (Exception e)

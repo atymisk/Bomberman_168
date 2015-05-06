@@ -21,4 +21,24 @@ public class UImethods : MonoBehaviour {
 		//Debug.Log(pass);
 		passfield.text = "";
 	}
+	public void tomulti()
+	{
+		Application.LoadLevel("MultiBomberman");
+	}
+	public void tolobby()
+	{
+		Application.LoadLevel("Lobby");
+	}
+	public void tosinglep()
+	{
+		Application.LoadLevel("Bomberman");
+	}
+	public void closegame()
+	{
+		Application.Quit();
+	}
+	public void homescreen()
+	{
+		Application.LoadLevel("Home");
+	}
 }

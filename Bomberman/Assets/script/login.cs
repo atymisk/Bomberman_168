@@ -9,6 +9,7 @@ public class login : MonoBehaviour {
 	private string tosend = "testing";
 	public void submit()
 	{
+		//hash password
 		tosend = user.text + "|" + pass.text;
 	}
 	public string strsend()
