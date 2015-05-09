@@ -1,0 +1,37 @@
+// ===================== 5/9/2015 ===
+
+SUMMARY: Folders and files are now organized. Both client and server can now send messages to each other manually. However, the receiving methods aren't as solid. There is a strange, inconsistent bug with the server, please ignore for now (or better yet, help pick it out!)
+
+<Older Builds>
+(1) Self-explanatory. Old contents are in this folder.
+
+<classdemo-master (and) ServerSystem>
+(1) "classdemo-master" folder is removed and replaced with "ServerSystem", a fresh new build from the TA's git repository.
+(2) Open "ServerSystem/ClientServer.sln" and look for "Server.cs" to work with the server.
+(3) Irrelevant "Client" is removed from the project folder.
+
+<Bomberman\Assets\scenes\>
+(1) <Home.unity> Renamed buttons and texts.
+(2) <Home.unity> Changed the binding of the Multiplayer(Button) from backtologin() to tomulti().
+(3) <MultiBomberman.unity> ClientScriptHolder added. It will start when the page is loaded.
+(4) <Bomberman.unity> Excess unknown scripts removed for the bomb GameObject.
+
+<ServerSystem\Server\Server.cs>
+(1) Different from the previous build because it now uses AutoResetEvent instead of Manual (see TA email for details).
+(2) Threads are now added to allow parallel-loops and methods to run simultaneously. They are in the Main().
+(3) MessageHandler class is now added. It makes the task of parsing messages easier as it does it automatically; all you have to do is to add it using MessageHandler.addMessage(IP, messageContents).
+(4) A test. It's of manual message sending. Just hit enter (after connection is established) to send a message.
+(5) Many, many other changes... Please read the comments carefully.
+(6) Note that the receiving part isn't done/wrapped up as conveniently as the sending. This is true for both the server and the client.
+(7) Also note that there will be this annoying bug that keeps happening. I have not found a solution yet. Just ignore it and restart the simulations would usually do the trick as the bug only appears sometimes.
+
+<Bomberman\Assets\script\Client.cs>
+(1) Changed ManualResetEvent into AutoResetEvent.
+(2) Added a few more test messages to be sent in the initial stage.
+(3) A test. It's an automatic message-sender on regular intervals. NOTE: You must have the Unity window active, or else you wouldn't be able to get any messages sent.
+(4) As well as many changes, small and big.
+(5) Note that the receiving part isn't done/wrapped up as conveniently as the sending. This is true for both the server and the client.
+(6) Note that the comments aren't as clear as the one in the Server. To get a better idea, please read carefully of the comments I've written in for the Server.
+
+~Faye
+// ===================== END ===
