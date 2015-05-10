@@ -45,12 +45,12 @@ public class Client : MonoBehaviour
 	private static StateObject recv_so;
 
 	// Registration & LogIn info #Anthony
-	string registerinfo = "";
-    string logininfo = "";
-    private Socket myclient;
-
-
-    public void Start()
+	string registerinfo = "Registering: ";
+    string logininfo = "Attempting Login: ";
+	//need notion of being connected --Anthony
+	private static bool connected = false;
+	//renaming to something other than start, client attempts to connect before login attempted --Anthony
+    public void connecting()
     {
         // Connect to a remote device.
         try
@@ -72,7 +72,6 @@ public class Client : MonoBehaviour
 			
 			// Connect to the remote endpoint.
             client.BeginConnect(remoteEP, new AsyncCallback(ConnectCallback), send_so);
-
             // Waits for 5 seconds for connection to be done
             send_so.connectDone.WaitOne(5000);
 
@@ -92,40 +91,24 @@ public class Client : MonoBehaviour
             // Write the response to the console.
             Debug.Log("Response received : " + recv_so.response);
 
-            // =============================== #Anthony
-
-            myclient = client;
-
-            // Load the game screen
-            //Application.LoadLevel(1);
+            // ------------------Anthony------------------------//
 
             if (GameObject.Find("reg") != null)
             {
-                registerinfo = GameObject.Find("reg").GetComponentInChildren<register>().getsendinfo() + "<EOF>";
-                //Debug.Log(registerinfo);
-                /*Send(client,registerinfo,send_so);//garbage collected?
-                send_so.sendDone.WaitOne(5000);
-                Receive(recv_so);
-                recv_so.receiveDone.WaitOne(5000);
-                Debug.Log("Attempting registering: " + recv_so.response);*/
-                Application.LoadLevel("LogInScreen");
+                registerinfo += GameObject.Find("reg").GetComponentInChildren<register>().getsendinfo();
+				lazySend(registerinfo);
             }
             else if (GameObject.Find("login") != null)
             {
-                logininfo = GameObject.Find("login").GetComponentInChildren<login>().strsend() + "<EOF>";
-                //Debug.Log (logininfo);
-                /*
-                StateObject so = new StateObject();
-                so.workSocket = client;
-                Send(client,logininfo,so);
-                so.sendDone.WaitOne(5000);
-                StateObject ro = new StateObject();
-                ro.workSocket = client;
-                Receive(ro);
-                ro.receiveDone.WaitOne(5000);
-                Debug.Log("Attempting login:" + ro.response);*/
-                //	Application.LoadLevel(1);
+                logininfo += GameObject.Find("login").GetComponentInChildren<login>().strsend();
+				lazySend(logininfo);
+				if(connected)
+				{
+					Application.LoadLevel("Lobby");
+				}
+				//Application.LoadLevel("Lobby");
             }
+			//-----------Anthony--------------------//
         }
         catch (Exception e)
         {
@@ -182,34 +165,47 @@ public class Client : MonoBehaviour
             // Retrieve the state object and the client socket 
             // from the asynchronous state object.
             StateObject state = (StateObject)ar.AsyncState;
-            Socket client = state.workSocket;
+            Socket mclient = state.workSocket;
 
             // Read data from the remote device.
-            int bytesRead = client.EndReceive(ar);
+            int bytesRead = mclient.EndReceive(ar);
 
-            if (bytesRead > 0)
-            {
-                // Found a 
-                state.sb.Append(Encoding.ASCII.GetString(state.buffer, 0, bytesRead));
-                string content = state.sb.ToString();
-
-                String[] message = content.Split(stringSeparators, StringSplitOptions.None);
-                if (message.Length == 2)
-                {
-                    state.receiveDone.Set();
-                    state.response = message[0];
-
-                    state.workSocket.Shutdown(SocketShutdown.Both);
-                    state.workSocket.Close();
-
-                }
-                else
-                {
-                    // Get the rest of the data.
-                    client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
-                                        new AsyncCallback(ReceiveCallback), state);
-                }
-            }
+			if (bytesRead > 0)
+			{
+				// There might be more data, so store the data received so far.
+				state.sb.Append(Encoding.ASCII.GetString(state.buffer, 0, bytesRead));
+				
+				// Check for end-of-file tag. If it is not there, read more data.
+				String content = state.sb.ToString();
+				if (content.IndexOf("<EOF>") > -1)
+				{
+					// All the data has been read from the server, add into the message processing list.
+					//MessageHandler.addMessage(content, content);
+					//--Anthony--added these if's to determine the status of connection
+					if(content == "Login Failed<EOF>")
+					{
+						Debug.Log("Login Failed");
+						connected = false;
+					}
+					else if(content == "Login Success<EOF>")
+					{
+						Debug.Log("Login Success");
+						connected = true;
+						//Application.LoadLevelAsync("Lobby"); <-doesn't work
+					}
+					state.sb = new StringBuilder("");
+					
+					// Setup a new state object and do a receive callback relay.
+					StateObject newstate = new StateObject();
+					newstate.workSocket = client;
+					mclient.BeginReceive(newstate.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReceiveCallback), newstate);
+				}
+				else
+				{
+					// Not all data received. Get more.
+					mclient.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);
+				}
+			}
             else
             {
                 Debug.Log("Connection close has been requested.");
@@ -222,18 +218,6 @@ public class Client : MonoBehaviour
         }
     }
 
-	private static void lazyReceive()
-	{
-		try
-		{
-			// Begin receiving the data from the remote device.
-			client.BeginReceive(recv_so.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReceiveCallback), recv_so);
-		}
-		catch (Exception e)
-		{
-			Debug.Log(e.ToString());
-		}
-	}
 	
 	private void Send(Socket client, String data, StateObject so)
 	{
@@ -265,6 +249,18 @@ public class Client : MonoBehaviour
             Debug.Log(e.ToString());
         }
     }
+	private static void lazyReceive()
+	{
+		try
+		{
+			// Begin receiving the data from the remote device.
+			client.BeginReceive(recv_so.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReceiveCallback), recv_so);
+		}
+		catch (Exception e)
+		{
+			Debug.Log(e.ToString());
+		}
+	}
 
 	public static void lazySend(String content)
 	{
@@ -281,7 +277,8 @@ public class Client : MonoBehaviour
 		recv_so.receiveDone.WaitOne(5000);
 		
 		// Write the response to the console.
-		Debug.Log("Response received : " + recv_so.response);
+		//string res = recv_so.response;
+//		Debug.Log("Response received : " + res);
 	}
 
     // Update is called once per frame
@@ -289,16 +286,21 @@ public class Client : MonoBehaviour
 	private int timesSent = 0;
     void FixedUpdate()
     {
-        timerCount++; // simple timer for testing purposes. delete later.
-        if (timerCount > 50)
-        {
-            timerCount = 0;
+		if(connected)//--Anthony-- trying to prevent null reference exceptions
+		{
+//			Debug.Log("connected");
+	        timerCount++; // simple timer for testing purposes. delete later.
+	        if (timerCount > 50)
+	        {
+	            timerCount = 0;
 
-            // send test message.
-			lazySend("Hi Server, my timer has reached 0. This is my "+ ++timesSent + "th time!");
+	            // send test message.
+				++timesSent;
+				lazySend("Hi Server, my timer has reached 0. This is my "+ timesSent + "th time!");
 
-            Debug.Log("Resetted "+ timesSent + "th time.");
-        } // END of timer implementation
+	            Debug.Log("Resetted "+ timesSent + "th time.");
+	        } // END of timer implementation
+		}
     }
 
-}
+	}

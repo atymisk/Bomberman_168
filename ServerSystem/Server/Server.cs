@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Collections.Generic;
+using MySql.Data.MySqlClient;
 
 // State object for reading client data asynchronously
 public class StateObject
@@ -16,6 +17,91 @@ public class StateObject
     public byte[] buffer = new byte[BufferSize];
     // Received data string.
     public StringBuilder sb = new StringBuilder();
+}
+//--Anthony--added the database connection
+public class DatabaseHandler
+{
+    private static MySqlConnection connect;
+    private string server;
+    private string db;
+    private string serveruser;
+    private string serverpass;
+
+    public DatabaseHandler() 
+    {
+        server = "localhost";
+        db = "BombermanDB";
+        serveruser = "root";
+        serverpass = "root";
+        string connectionstring = "SERVER=" + server /*+ ";" + "DATABASE=" + db*/ + ";" + "user id=" 
+                + serveruser + ";" + "PASSWORD=" + serverpass + ";" + "connection timeout=30;";
+        connect = new MySqlConnection(connectionstring);
+    }
+    private static bool OpenConnection()
+    {
+        try
+        {
+            connect.Open();
+            Console.WriteLine("Database Connected");
+            return true;
+        }
+        catch (MySqlException x)
+        {
+            Console.WriteLine(x.Message);
+            return false;
+        }
+    }
+    private static bool CloseConnection()
+    {
+        try
+        {
+            connect.Close();
+            return true;
+        }
+        catch (MySqlException x)
+        {
+            Console.WriteLine(x.Message);
+            return false;
+        }
+    }
+    public static void adduser(string user, string pass)
+    {
+        if (OpenConnection())
+        {
+            string query = "INSERT INTO bmdb.main (username, pass) VALUES (@username,@password)";
+            MySqlCommand cmd = new MySqlCommand(query, connect);
+            cmd.Parameters.Add("@username", user);
+            cmd.Parameters.Add("@password", pass);
+            cmd.ExecuteNonQuery();
+            CloseConnection();
+        }
+
+    }
+    /*//don't need this yet maybe
+    public void updateinfo(string user)
+    {
+        
+    }*/
+    public static bool verify(string user, string pass)
+    {   
+        if (OpenConnection())
+        {
+            string[] list = new string[2];
+            string query = "select * from bmdb.main where username = '" + user + "'";
+            MySqlCommand cmd = new MySqlCommand(query, connect);
+            MySqlDataReader reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                list[0] = reader.GetString("username");
+                list[1] = reader.GetString("pass");
+            }
+            reader.Close();
+            Console.WriteLine(list[0] + "\n" + list[1]);
+            CloseConnection();
+            return (user == list[0] && pass == list[1]);
+        }
+        return false;
+    }
 }
 
 // The class that handles messages. All methods are currently static.
@@ -54,8 +140,40 @@ public class MessageHandler
                 {
                     // This is where you put if-statements for message contents, or calls
                     // to other soon-to-be-written-hopefully methods to keep it clean.
-                    Console.WriteLine(m.message);
+                    Console.WriteLine(m.message+"\n");
+                    if (m.message.Contains("Attempting Login: "))
+                    {
+                        //parse the string for user and pass
+                        //Attempting Login: username|password<EOF>
+                        string user = "";
+                        string pass = "";
+                        string msg = m.message;
 
+                        msg = msg.Substring(18);//username|password<EOF>
+                        int index = msg.IndexOf("|");
+                        user = msg.Substring(0, index);//username
+
+                        msg = msg.Substring(index+1);//password<EOF> this doesnt
+                        index = msg.IndexOf("<");//this works
+                        pass = msg.Substring(0, index);
+                        
+                        //Console.WriteLine("Username: "+user + "\n" +"Password: "+ pass);
+
+                        //check the database with the user and pass
+                        if (DatabaseHandler.verify(user, pass))
+                        {
+                            AsynchronousSocketListener.lazySend("Login Success<EOF>");
+                        }
+                        else
+                        {
+                            AsynchronousSocketListener.lazySend("Login Failed<EOF>");
+                        }
+                        //AsynchronousSocketListener.lazySend("Login Success<EOF>");
+                    }
+                    else if (m.message.Contains("Registering: "))
+                    {
+
+                    }
                     allMessages.Remove(m);
                 }
             }
@@ -180,12 +298,13 @@ public class AsynchronousSocketListener
 
                 // I haven't figured out how to retrieve the IP yet, so it's "content, content" for now.
                 // It should be "IP, content" later. #HalpIsNeeded.
+                
                 MessageHandler.addMessage(content, content);
 
                 //Console.WriteLine("\n\n");
-                // Echo the data back to the client.
+                //** Echo the data back to the client.**
                 // (Probably not necessary, but play around with it.)
-                Send(listener, content);
+                //Send(listener, "From Server: "+content);
 
                 // Setup a new state object
                 StateObject newstate = new StateObject();
@@ -235,7 +354,8 @@ public class AsynchronousSocketListener
 
     public static void lazySend(String content)
     {
-        Send(listener, content + "<EOF>");
+        Send(listener, content);
+        Console.WriteLine(content);
     }
 
     public static int Main(String[] args)
@@ -248,6 +368,7 @@ public class AsynchronousSocketListener
         Thread messageThread = new Thread(MessageHandler.processMessages);
         messageThread.Start();
 
+        DatabaseHandler db = new DatabaseHandler();
         // This is for testing purposes only. Delete or comment out after done.
         Console.WriteLine("After you have established a connection...");
         int timesSent = 0;
@@ -269,7 +390,6 @@ public class AsynchronousSocketListener
         // it works without needing a connection. In other words,
         // Threads #1 and #2 aren't dependent on each other since they
         // are separate threads!
-
 
         return 0;
     }

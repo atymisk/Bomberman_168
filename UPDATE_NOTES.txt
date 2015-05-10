@@ -1,3 +1,36 @@
+// ===================== 5/10/2015 ===
+SUMMARY: Server can connect to MySQL database and can actually check for username and password. Register page will be dealt with accordingly. Lobby will have scripts added soon.
+
+<ServerSystem\Server\Server.cs>
+(1) major changes to the server code, adding in lots of SQL goodies
+(2) Added some if-else in the messagehandler object for the login messages(which now work)
+
+<Bomberman\Assets\scripts\Client.cs>
+(1) connecting from login works and will bring you to the lobby screen with successful login
+(2) bool connected added as flag to prevent any nullreference exceptions and connecting automatically
+(3) Start() renamed to connecting() so it won't try to connect at loadtime
+(4) register field should probably close connection as soon as its done, just a suggestion
+(5) ReceiveCallBack() changed to prevent message appending and going wild, also contains fields for login success and failure
+(6) FixedUpdate() changed to have bool connected to prevent nullreference
+
+<Bomberman\Assets\scripts\login.cs>
+(1) Minor changes to make sure the password doesnt screwup when getting sent
+
+<Bomberman\Assets\scripts\register.cs>
+(1) Removed some fields to simplify the database
+
+<Bomberman\Assets\scripts\UImethods.cs>
+(1) removed the logic that prevented the text from showing on the password inputfield
+
+<Bomberman\Assests\scenes\LogInScreen>
+(1) Only altered some gameobject components, nothing visual, all works as intended
+(2) Password field no longer hides the password as it interfered with the message being sent
+(3) IMPORTANT: current testing login is as follows [username] = "test" AND [password] = "defaultpass"
+
+<Bomberman\Assests\scenes\Register>
+(1) minor changes this time, more to come very soon
+// ===================== END ===
+
 // ===================== 5/9/2015 ===
 
 SUMMARY: Folders and files are now organized. Both client and server can now send messages to each other manually. However, the receiving methods aren't as solid. There is a strange, inconsistent bug with the server, please ignore for now (or better yet, help pick it out!)

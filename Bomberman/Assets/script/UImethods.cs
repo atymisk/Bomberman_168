@@ -5,7 +5,7 @@ using UnityEngine.UI;
 public class UImethods : MonoBehaviour {
 
 	public InputField passfield;
-	private string pass="";
+	public string pass="";
 	public void register()
 	{
 		Application.LoadLevel("Register");
@@ -19,7 +19,7 @@ public class UImethods : MonoBehaviour {
 		pass += passfield.text;
 
 		//Debug.Log(pass);
-		passfield.text = "";
+		//passfield.text = "";
 	}
 	public void tomulti()
 	{
