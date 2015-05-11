@@ -18,6 +18,108 @@ public class StateObject
     // Received data string.
     public StringBuilder sb = new StringBuilder();
 }
+
+// Every four players is one game. More than one game may be allowed.
+// An IP address can have multiple Games, or multiple players of the same Game.
+public class Game
+{
+    public enum Status { NONE, LOBBY, PLAYING, PAUSED, ENDED }; // others to be added
+
+    // Game details
+    public Status status = Status.NONE;
+    //public List<Player> allPlayers;
+
+    //**need a list of possible locations for 4 players
+    public Player[] allPlayers;
+    public int nextindex;
+    public List<Bomb> allBombs;
+
+    public Game()
+    {
+        allPlayers = new Player[4];//at most 4 in a single game
+        nextindex = 0;//starting position, when one player is added: next position is 1
+    }
+    // A bit incomplete as I'm not sure how you guys want it
+    public class Player
+    {
+        public enum Status { NONE,WAITING,READY, ALIVE, DEAD }; // others to be added
+        public Status status = Status.NONE;
+        public String IP;
+        public String username;
+        public int index;//--added by Anthony for lobby logic
+        //public Socket clientSocket;
+        public int x, y;
+
+        public Player(String IP, int x, int y, int index, String username)
+        {
+            this.IP = IP;
+            this.x = x;
+            this.y = y;
+            this.index = index;
+            this.username = username;
+        }
+    }
+
+    // A bit incomplete as I'm not sure how you guys want it
+    public class Bomb
+    {
+        public enum Status { NONE, PENDING, TICKING, DESTROYED };
+        public Status status = Status.NONE;
+        public int ACKs = 0;
+        public int x, y;
+
+        public Bomb(int x, int y)
+        {
+            status = Status.PENDING;
+            this.x = x;
+            this.y = y;
+        }
+
+        // Add to the total number of players who have
+        // gotten the signal to plant the bomb
+        // then return the new incremented number
+        public int ack()
+        {
+            return ++ACKs;
+        }
+
+        public void ready()
+        {
+            status = Status.TICKING;
+        }
+
+        public void blowUp()
+        {
+            status = Status.DESTROYED;
+        }
+    }
+    public void lobby()//whenever theres anyone
+    {
+        for(int i = 0; i < allPlayers.Length; i++)
+        {
+            //send to all
+            //send("P" + (i+1) + "L: " + allPlayers[i].username + "|" + allPlayers[i].x + "|" + allPlayers[i].y);
+        }
+    }
+
+    public int addPlayer(string ip, int x, int y, string user)
+    {
+        if (nextindex != 4)//no more after position 3
+        {
+            allPlayers[nextindex] = new Player(ip, x, y,nextindex,user);
+            nextindex++;
+            lobby();
+            return nextindex - 1;//send index to the client?
+        }
+        return -1;
+    }
+
+    public int getplayerCount()
+    {
+        return allPlayers.Length;// allPlayers.Count;
+    }
+
+}
 //--Anthony--added the database connection
 public class DatabaseHandler
 {
@@ -29,11 +131,11 @@ public class DatabaseHandler
 
     public DatabaseHandler() 
     {
-        server = "localhost";
+        server = "127.0.0.1";
         db = "BombermanDB";
         serveruser = "root";
-        serverpass = "root";
-        string connectionstring = "SERVER=" + server /*+ ";" + "DATABASE=" + db*/ + ";" + "user id=" 
+        serverpass = "master";
+        string connectionstring = "SERVER=" + server + ";PORT = 3306;"/* DATABASE=" + db + ";"*/ + "user id=" 
                 + serveruser + ";" + "PASSWORD=" + serverpass + ";" + "connection timeout=30;";
         connect = new MySqlConnection(connectionstring);
     }
@@ -64,7 +166,7 @@ public class DatabaseHandler
             return false;
         }
     }
-    public static void adduser(string user, string pass)
+    public static bool adduser(string user, string pass)
     {
         if (OpenConnection())
         {
@@ -72,10 +174,11 @@ public class DatabaseHandler
             MySqlCommand cmd = new MySqlCommand(query, connect);
             cmd.Parameters.Add("@username", user);
             cmd.Parameters.Add("@password", pass);
-            cmd.ExecuteNonQuery();
+            int result = cmd.ExecuteNonQuery();
             CloseConnection();
+            return result > 0;
         }
-
+        return false;
     }
     /*//don't need this yet maybe
     public void updateinfo(string user)
@@ -147,9 +250,7 @@ public class MessageHandler
                         //Attempting Login: username|password<EOF>
                         string user = "";
                         string pass = "";
-                        string msg = m.message;
-
-                        msg = msg.Substring(18);//username|password<EOF>
+                        string msg = m.message.Substring(18);//username|password<EOF>
                         int index = msg.IndexOf("|");
                         user = msg.Substring(0, index);//username
 
@@ -162,7 +263,8 @@ public class MessageHandler
                         //check the database with the user and pass
                         if (DatabaseHandler.verify(user, pass))
                         {
-                            AsynchronousSocketListener.lazySend("Login Success<EOF>");
+                            AsynchronousSocketListener.lazySend("Login Success " + user + "<EOF>");
+                            //add player object here?
                         }
                         else
                         {
@@ -170,9 +272,25 @@ public class MessageHandler
                         }
                         //AsynchronousSocketListener.lazySend("Login Success<EOF>");
                     }
-                    else if (m.message.Contains("Registering: "))
+                    else if (m.message.Contains("Registering: "))//Registering: username|password<EOF>
                     {
 
+                        string msg = m.message.Substring(13);//username|password<EOF>
+                        int index = msg.IndexOf("|");
+                        string user = msg.Substring(0, index);
+                        msg = msg.Substring(index + 1);
+                        index = msg.IndexOf("<");
+                        string pass = msg.Substring(0, index);
+                        Console.WriteLine(user + "\n" + pass);
+                        if (DatabaseHandler.adduser(user, pass))
+                        {
+                            AsynchronousSocketListener.lazySend("Registered "+user+"<EOF>");
+                            //add player object here?
+                        }
+                        else
+                        {
+                            AsynchronousSocketListener.lazySend("Invalid Registery<EOF>");
+                        }
                     }
                     allMessages.Remove(m);
                 }
@@ -266,6 +384,7 @@ public class AsynchronousSocketListener
         // So I need to store all clients sockets so I can send them messages later
         // TODO: store in meaningful way,such as Dictionary<string,Socket>
         allClients.Add(handler);
+        //add to the Game instance, a new player object
         Console.WriteLine("New Client connected.");
 
         // Now, start "waiting" to receive messages.
@@ -295,7 +414,9 @@ public class AsynchronousSocketListener
             {
                 // All the data has been read from the client, add into the message processing list.
                 Console.WriteLine("Read {0} bytes from socket." /*\n Data : {1}"*/, content.Length, content);
-
+                IPAddress IP = IPAddress.Parse(((IPEndPoint)listener.RemoteEndPoint).Address.ToString());
+                IPAddress IP2 = IPAddress.Parse(((IPEndPoint)listener.LocalEndPoint).Address.ToString());
+                Console.WriteLine("\nRemoteIP: " + IP + ", LocalIP: " + IP2 + "\n");
                 // I haven't figured out how to retrieve the IP yet, so it's "content, content" for now.
                 // It should be "IP, content" later. #HalpIsNeeded.
                 

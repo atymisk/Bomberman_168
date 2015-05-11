@@ -7,7 +7,7 @@ public class register : MonoBehaviour {
 	public InputField pass;//6 min, 12 max
 	public Text t;
 	bool ok = false;
-	string dbg = "*";
+	public string dbg = "*";
 	string tosend="";
 	public void submit()
 	{
@@ -28,9 +28,9 @@ public class register : MonoBehaviour {
 		if(!ok)
 		{
 			dbg += "Password length invalid\n";
-			tosend = "b";
+			tosend = "invalid";
 		}
-
+		//Debug.Log(tosend);
 		t.text = dbg;
 	}
 	public string getsendinfo()

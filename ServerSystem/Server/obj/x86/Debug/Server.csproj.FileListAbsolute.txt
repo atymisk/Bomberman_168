@@ -10,3 +10,8 @@ C:\Users\ATY\Desktop\UCI\Junior\Spring\168\Bomberman_168 - Copy\ServerSystem\Ser
 C:\Users\ATY\Desktop\UCI\Junior\Spring\168\Bomberman_168 - Copy\ServerSystem\Server\obj\x86\Debug\Server.pdb
 C:\Users\ATY\Desktop\UCI\Junior\Spring\168\Bomberman_168 - Copy\ServerSystem\bin\Server.exe
 C:\Users\ATY\Desktop\UCI\Junior\Spring\168\Bomberman_168 - Copy\ServerSystem\bin\Server.pdb
+C:\Users\ATY\Desktop\UCI\Junior\Spring\Bomberman_168\ServerSystem\Server\obj\x86\Debug\Server.exe
+C:\Users\ATY\Desktop\UCI\Junior\Spring\Bomberman_168\ServerSystem\Server\obj\x86\Debug\Server.pdb
+C:\Users\ATY\Desktop\UCI\Junior\Spring\Bomberman_168\ServerSystem\bin\Server.exe
+C:\Users\ATY\Desktop\UCI\Junior\Spring\Bomberman_168\ServerSystem\bin\Server.pdb
+C:\Users\ATY\Desktop\UCI\Junior\Spring\Bomberman_168\ServerSystem\Server\obj\x86\Debug\Server.csprojResolveAssemblyReference.cache

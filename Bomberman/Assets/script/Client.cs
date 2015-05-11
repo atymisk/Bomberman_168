@@ -31,11 +31,34 @@ public class StateObject
     public String response = String.Empty;
 }
 
+//Player class for the client to see OTHER players
+public class OtherPlayer
+{
+	public string username;
+	public int x;
+	public int y;
+
+	public OtherPlayer(string username, int x, int y)
+	{
+		this.x = x;
+		this.y = y;
+		this.username = username;
+	}
+	public void updateXY(int x,int y)
+	{
+		this.x = x;
+		this.y = y;
+	}
+}
+
 public class Client : MonoBehaviour
 {
     // The port number for the remote device.
     private const int port = 11000;
     static string[] stringSeparators = new string[] { "<EOF>" };
+	//--Anthony-- public IP's to consider for my device/router just in case
+	//71.94.130.204
+	//70.187.161.177
 
 	private static Socket client;
 	private static IPEndPoint remoteEP;
@@ -44,11 +67,23 @@ public class Client : MonoBehaviour
 	private static StateObject send_so;
 	private static StateObject recv_so;
 
+	public static OtherPlayer[] otherplayers = new OtherPlayer[4];//needs to be only the others, not yourself
 	// Registration & LogIn info #Anthony
 	string registerinfo = "Registering: ";
     string logininfo = "Attempting Login: ";
+	private static string myuser = "";
+	private static int myindex = -1;
 	//need notion of being connected --Anthony
-	private static bool connected = false;
+	public static bool connected = false;
+	//public static bool inlobby = false;
+	private static bool registered = false;
+
+	//Assuming that the method is Always called at the start of a scene since its not static
+	void Start()
+	{
+		SceneEnter();
+	}
+
 	//renaming to something other than start, client attempts to connect before login attempted --Anthony
     public void connecting()
     {
@@ -90,31 +125,55 @@ public class Client : MonoBehaviour
             recv_so.receiveDone.WaitOne(5000);
             // Write the response to the console.
             Debug.Log("Response received : " + recv_so.response);
-
-            // ------------------Anthony------------------------//
-
-            if (GameObject.Find("reg") != null)
-            {
-                registerinfo += GameObject.Find("reg").GetComponentInChildren<register>().getsendinfo();
-				lazySend(registerinfo);
-            }
-            else if (GameObject.Find("login") != null)
-            {
-                logininfo += GameObject.Find("login").GetComponentInChildren<login>().strsend();
-				lazySend(logininfo);
-				if(connected)
-				{
-					Application.LoadLevel("Lobby");
-				}
-				//Application.LoadLevel("Lobby");
-            }
-			//-----------Anthony--------------------//
+			connected = true;
+			SceneEnter();//check the scene once a connection has been established
         }
         catch (Exception e)
         {
             Debug.Log(e.ToString());
         }
     }
+	//use Start()?
+	public void SceneEnter()
+	{
+		if(!connected)
+		{
+			return;
+		}
+		//check which scene im in and do a thing
+		// ------------------Anthony------------------------//
+		if(GameObject.Find ("lobby") != null)
+		{
+			//contact server and tell it it's in the lobby
+			lazySend("");
+		}
+		else if (GameObject.Find("reg") != null)
+		{
+			//Debug.Log("Register page");
+			registerinfo += GameObject.Find("reg").GetComponentInChildren<register>().getsendinfo();
+			lazySend(registerinfo);
+			if(registered)
+			{
+				//connected = true;
+				Application.LoadLevel("Lobby");
+			}
+			else
+			{
+				//connected = false;
+				GameObject.Find("reg").GetComponentInChildren<register>().dbg = "Register Failed";
+			}
+		}
+		else if (GameObject.Find("login") != null)
+		{
+			logininfo += GameObject.Find("login").GetComponentInChildren<login>().strsend();
+			lazySend(logininfo);
+			if(connected)
+			{
+				Application.LoadLevel("Lobby");
+			}
+		}
+		//-----------Anthony--------------------//
+	}
 
 	// When client connects with the server
     private static void ConnectCallback(IAsyncResult ar)
@@ -179,19 +238,64 @@ public class Client : MonoBehaviour
 				String content = state.sb.ToString();
 				if (content.IndexOf("<EOF>") > -1)
 				{
-					// All the data has been read from the server, add into the message processing list.
-					//MessageHandler.addMessage(content, content);
-					//--Anthony--added these if's to determine the status of connection
+					//--Anthony--added these various if's
+					/*
+					 * //for the lobby
+					 * if(content.Contains("P1L: "))//possible to make this all in one IF
+					 * {
+					 * 		string msg = content.Substring(5);//username|x|y<EOF>
+					 * 		int index = msg.IndexOf("|");
+					 * 		string user = msg.Substring(0,index);
+					 * 		
+					 *	 		msg = msg.Substring(index+1);//x|y<EOF>
+					 *	 		index = msg.IndexOf("|");
+					 *	 		int x = msg.Substring(0,index).ParseInt();
+					 * 
+					 * 			msg = msg.Substring(index+1);//y<EOF>
+					 * 			index = msg.IndexOf("<");
+					 * 			int y = msg.Substring(0,index).ParseInt();
+					 * 			otherplayer[0] = new OtherPlayer(user,x,y);
+					 * 
+					 * 		if(user == myuser)//if this message happens to contain the client's info
+					 * 		{
+					 * 			myindex = 0;
+					 * 		}
+					 * 		lobby.setup(user,0);
+					 * }
+					 * else if(content.Contains("P2L: "))
+					 * {
+					 * 		//similar as above
+					 * }
+					 * else if(content.Contains("P3L: "))
+					 * {
+					 * }
+					 * else if(content.Contains("P4L: "))
+					 * {
+					 * }
+					 */
 					if(content == "Login Failed<EOF>")
 					{
 						Debug.Log("Login Failed");
 						connected = false;
 					}
-					else if(content == "Login Success<EOF>")
+					else if(content.Contains("Login Success"))//Login Success username<EOF>
 					{
 						Debug.Log("Login Success");
 						connected = true;
+						myuser = content.Substring(14,content.IndexOf("<"));
 						//Application.LoadLevelAsync("Lobby"); <-doesn't work
+					}
+					else if(content.Contains("Registered"))
+					{
+						Debug.Log("Registering successful");
+						registered = true;
+						myuser = content.Substring(11,content.IndexOf("<"));
+					}
+					else if(content == "Invalid Registry<EOF>")
+					{
+						Debug.Log("Registering failed");
+						registered = false;
+						connected = false;
 					}
 					state.sb = new StringBuilder("");
 					
@@ -281,11 +385,18 @@ public class Client : MonoBehaviour
 //		Debug.Log("Response received : " + res);
 	}
 
+	//made a nonstatic wrapper for the lazysend so that other objects can use the send function
+	public void sendmsg(string content)
+	{
+		lazySend(content);
+	}
+
     // Update is called once per frame
-    private int timerCount = 0;
-	private int timesSent = 0;
+    //private int timerCount = 0;
+	//private int timesSent = 0;
     void FixedUpdate()
     {
+		/*
 		if(connected)//--Anthony-- trying to prevent null reference exceptions
 		{
 //			Debug.Log("connected");
@@ -300,7 +411,7 @@ public class Client : MonoBehaviour
 
 	            Debug.Log("Resetted "+ timesSent + "th time.");
 	        } // END of timer implementation
-		}
+		}*/
     }
 
 	}

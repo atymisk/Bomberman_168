@@ -41,4 +41,16 @@ public class UImethods : MonoBehaviour {
 	{
 		Application.LoadLevel("Home");
 	}
+	//if the client is connected, go straight to lobby
+	public void homepagemultipcheck()
+	{
+		if(Client.connected)
+		{
+			tolobby();
+		}
+		else
+		{
+			backtologin();
+		}
+	}
 }
