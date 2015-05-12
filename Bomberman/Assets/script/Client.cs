@@ -136,6 +136,7 @@ public class Client : MonoBehaviour
 	//use Start()?
 	public void SceneEnter()
 	{
+		Debug.Log("SceneEnter");
 		if(!connected)
 		{
 			return;
@@ -145,7 +146,7 @@ public class Client : MonoBehaviour
 		if(GameObject.Find ("lobby") != null)
 		{
 			//contact server and tell it it's in the lobby
-			lazySend("");
+			lazySend("Awaiting Game " + myuser);
 		}
 		else if (GameObject.Find("reg") != null)
 		{
@@ -239,51 +240,44 @@ public class Client : MonoBehaviour
 				if (content.IndexOf("<EOF>") > -1)
 				{
 					//--Anthony--added these various if's
-					/*
-					 * //for the lobby
-					 * if(content.Contains("P1L: "))//possible to make this all in one IF
-					 * {
-					 * 		string msg = content.Substring(5);//username|x|y<EOF>
-					 * 		int index = msg.IndexOf("|");
-					 * 		string user = msg.Substring(0,index);
-					 * 		
-					 *	 		msg = msg.Substring(index+1);//x|y<EOF>
-					 *	 		index = msg.IndexOf("|");
-					 *	 		int x = msg.Substring(0,index).ParseInt();
-					 * 
-					 * 			msg = msg.Substring(index+1);//y<EOF>
-					 * 			index = msg.IndexOf("<");
-					 * 			int y = msg.Substring(0,index).ParseInt();
-					 * 			otherplayer[0] = new OtherPlayer(user,x,y);
-					 * 
-					 * 		if(user == myuser)//if this message happens to contain the client's info
-					 * 		{
-					 * 			myindex = 0;
-					 * 		}
-					 * 		lobby.setup(user,0);
-					 * }
-					 * else if(content.Contains("P2L: "))
-					 * {
-					 * 		//similar as above
-					 * }
-					 * else if(content.Contains("P3L: "))
-					 * {
-					 * }
-					 * else if(content.Contains("P4L: "))
-					 * {
-					 * }
-					 */
-					if(content == "Login Failed<EOF>")
+
+					//for the lobby
+					if(content.Contains("P1L: ")||content.Contains("P2L: ")||content.Contains("P3L: ")||content.Contains("P4L: "))
+					{
+						Debug.Log(content);
+						int ind = int.Parse(content.Substring(1,1));//get the player number from the msg
+					  	ind--;
+					  	string msg = content.Substring(5);//username|x|y<EOF>
+					  	int index = msg.IndexOf("|");
+					  	string user = msg.Substring(0,index);
+
+					 	msg = msg.Substring(index+1);//x|y<EOF>
+					 	index = msg.IndexOf("|");
+					 	int x = int.Parse (msg.Substring(0,index));
+
+					  	msg = msg.Substring(index+1);//y<EOF>
+					  	index = msg.IndexOf("<");
+					  	int y = int.Parse(msg.Substring(0,index));
+					  	
+					  	otherplayers[ind] = new OtherPlayer(user,x,y);
+					  	if(user == myuser)//if this message happens to contain the client's info
+					  	{
+					  		myindex = ind;
+					  	}
+					 	lobby.setup(user,ind);
+					}
+					else if(content == "Login Failed<EOF>")
 					{
 						Debug.Log("Login Failed");
 						connected = false;
 					}
-					else if(content.Contains("Login Success"))//Login Success username<EOF>
+					else if(content.Contains("Login Success"))//Login Success test<EOF>
 					{
 						Debug.Log("Login Success");
 						connected = true;
-						myuser = content.Substring(14,content.IndexOf("<"));
-						//Application.LoadLevelAsync("Lobby"); <-doesn't work
+						Debug.Log(content);
+						content = content.Substring(14);//username<EOF>
+						myuser = content.Substring(0,content.Length-5);
 					}
 					else if(content.Contains("Registered"))
 					{

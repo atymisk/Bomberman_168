@@ -44,13 +44,13 @@ public class Game
     {
         public enum Status { NONE,WAITING,READY, ALIVE, DEAD }; // others to be added
         public Status status = Status.NONE;
-        public String IP;
+        public IPAddress IP;
         public String username;
         public int index;//--added by Anthony for lobby logic
         //public Socket clientSocket;
         public int x, y;
 
-        public Player(String IP, int x, int y, int index, String username)
+        public Player(IPAddress IP, int x, int y, int index, String username)
         {
             this.IP = IP;
             this.x = x;
@@ -98,20 +98,28 @@ public class Game
         for(int i = 0; i < allPlayers.Length; i++)
         {
             //send to all
-            //send("P" + (i+1) + "L: " + allPlayers[i].username + "|" + allPlayers[i].x + "|" + allPlayers[i].y);
+            if (allPlayers[i] == null)
+            {
+                break;
+            }
+            AsynchronousSocketListener.lazySend("P" + (i+1) + "L: " + allPlayers[i].username 
+                + "|" + allPlayers[i].x + "|" + allPlayers[i].y + "<EOF>");
         }
     }
-
-    public int addPlayer(string ip, int x, int y, string user)
+    public void addPlayer(IPAddress ip, string user)
+    {
+        //grab one of four sets of coordinates
+        addPlayer(ip,-1, -1, user);//-1 for now
+    }
+    public void addPlayer(IPAddress ip, int x, int y, string user)
     {
         if (nextindex != 4)//no more after position 3
         {
             allPlayers[nextindex] = new Player(ip, x, y,nextindex,user);
             nextindex++;
-            lobby();
-            return nextindex - 1;//send index to the client?
+            lobby();//have the server send player info back to all clients
+            //return nextindex - 1;//send index to the client?
         }
-        return -1;
     }
 
     public int getplayerCount()
@@ -212,28 +220,30 @@ public class MessageHandler
 {
     // Currently all un-parsed messages
     public static List<Message> allMessages = new List<Message>();
-
+    public static List<Game> games = new List<Game>();
+    public static int count = 0;//every 4, create/add a new Game object
     public class Message
     {
-        public string IP;
+        public Socket client;
         public string message;
 
-        public Message(string IP, string message)
+        public Message(Socket client, string message)
         {
-            this.IP = IP;
+            this.client = client;
             this.message = message;
         }
     }
 
     // Call this to add a new message to the processing list
-    public static void addMessage(string IP, string message)
+    public static void addMessage(Socket client, string message)
     {
-        allMessages.Add(new Message(IP, message));
+        allMessages.Add(new Message(client, message));
     }
 
     // Process/parse all the messages received
     public static void processMessages()
     {
+        games.Add(new Game());//hopefully this is only called once when the thread starts
         while (true)
         {
             while (allMessages.Count > 0)
@@ -292,6 +302,25 @@ public class MessageHandler
                             AsynchronousSocketListener.lazySend("Invalid Registery<EOF>");
                         }
                     }
+                    else if(m.message.Contains("Awaiting Game"))//Awaiting Game username<EOF>
+                    {
+                        //move the game state to lobby
+                        //have the game add the player who sent the msg
+                            //need the username and the ip at minimum, need to probably make a list 
+                            //of some sort of client object with ip/socket and username
+                        //game will send messages about the other players within the same lobby
+                        m.message = m.message.Substring(14);
+                        IPAddress.Parse(((IPEndPoint)m.client.RemoteEndPoint).Address.ToString());
+                        games[games.Count - 1].addPlayer(
+                            IPAddress.Parse(((IPEndPoint)m.client.RemoteEndPoint).Address.ToString())
+                            ,m.message.Substring(0,m.message.IndexOf("<")));
+                        count++;
+                        if (count % 4 == 0)//reaches 4 players
+                        {
+                            games.Add(new Game());
+                            count = 0;
+                        }
+                    }
                     allMessages.Remove(m);
                 }
             }
@@ -303,7 +332,7 @@ public class AsynchronousSocketListener
 {
     // Thread signal.
     public static AutoResetEvent allDone = new AutoResetEvent(false);
-
+    
     // List of all the clients, it should be changed into
     // a Dictionary<[IP address], [Sockets]> later on.
     public static List<Socket> allClients = new List<Socket>();
@@ -315,7 +344,10 @@ public class AsynchronousSocketListener
     private static IPEndPoint anyEndPoint;
 
 
-    public AsynchronousSocketListener() { }
+    public AsynchronousSocketListener() 
+    {
+        
+    }
 
     // This is called only once. Don't look back. Keep moving.
     public static void StartListening()
@@ -333,6 +365,9 @@ public class AsynchronousSocketListener
 
         // Listen to any IP Address
         anyEndPoint = new IPEndPoint(IPAddress.Any, 11000);
+
+        //setup a game, one at the beginning
+       //allGames.Add(new Game());
 
         // Bind the socket to selected endpoint and listen/"wait" for incoming connections.
         try
@@ -420,7 +455,7 @@ public class AsynchronousSocketListener
                 // I haven't figured out how to retrieve the IP yet, so it's "content, content" for now.
                 // It should be "IP, content" later. #HalpIsNeeded.
                 
-                MessageHandler.addMessage(content, content);
+                MessageHandler.addMessage(listener, content);
 
                 //Console.WriteLine("\n\n");
                 //** Echo the data back to the client.**
