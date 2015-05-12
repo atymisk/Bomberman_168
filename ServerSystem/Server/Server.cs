@@ -49,6 +49,69 @@ public class Game
         nextindex = 0;//starting position, when one player is added: next position is 1
         readycount = 0;
     }
+
+    // After lobby details are finished and a game starts...
+    public void GameLoop()
+    {
+        int timer = 0;
+        int maxTimerValue = 100; // change this value
+        // Continue looping until game ends and a winner is determined.
+        while (true)
+        {
+            if (++timer != maxTimerValue)
+            {
+                continue;
+            }
+            //Implement game logic and stuffs here.
+
+            sendPosition();
+            sendBombs();
+
+        }
+    }
+
+    private void sendPosition() // Player;0;T;9;8;0end;1;T;8;9;1end;2;T;9;7;2end;3;F;9;6;3end;
+    {
+        string package = "Player;";
+        for (int i = 0; i < getplayerCount(); i++)
+        {
+            string header = i.ToString() + MessageHandler.semicolon;
+            string deadOrAlive = allPlayers[i].isDead().ToString().ToUpper()[0].ToString() + MessageHandler.semicolon; ;
+            string x = allPlayers[i].x.ToString() + MessageHandler.semicolon;
+            string z = allPlayers[i].z.ToString() + MessageHandler.semicolon;
+            string footer = i.ToString() + "end" + MessageHandler.semicolon;
+            package += header + deadOrAlive + x + z + footer;
+        }
+        foreach (Player player in allPlayers)
+        {
+            AsynchronousSocketListener.directedSend(player.clientSocket, package);
+        }
+    }
+
+    // If there are still bombs in the list, send them out and delete.
+    private void sendBombs() // Bomb;x;z;strength;
+    {
+        string header = "Bomb;";
+        while (allBombs.Count != 0)
+        {
+            Bomb bomb = allBombs[0];
+            for (int i = 0; i < getplayerCount(); i++)
+            {
+                string x = bomb.x.ToString() + MessageHandler.semicolon;
+                string z = bomb.z.ToString() + MessageHandler.semicolon;
+                string strength = bomb.strength.ToString() + MessageHandler.semicolon;
+
+                string package = header + x + z + strength;
+
+                foreach (Player player in allPlayers)
+                {
+                    AsynchronousSocketListener.directedSend(allPlayers[i].clientSocket, package);
+                }
+            }
+            allBombs.Remove(bomb);
+        }
+    }
+
     // A bit incomplete as I'm not sure how you guys want it
     public class Player
     {
@@ -107,12 +170,14 @@ public class Game
         public Status status = Status.NONE;
         public int ACKs = 0;
         public float x, z;
+        public int strength;
 
-        public Bomb(float x, float z)
+        public Bomb(float x, float z, int strength)
         {
             status = Status.PENDING;
             this.x = x;
             this.z = z;
+            this.strength = strength;
         }
 
         // Add to the total number of players who have
@@ -123,9 +188,14 @@ public class Game
             return ++ACKs;
         }
 
-        public void ready()
+        public bool isReady(int numOfPlayers)
         {
-            status = Status.TICKING;
+            if (ACKs == numOfPlayers)
+            {
+                status = Status.TICKING;
+                return true;
+            }
+            return false;
         }
 
         public void blowUp()
@@ -147,10 +217,17 @@ public class Game
                 + "|" + allPlayers[i].x + "|" + allPlayers[i].z);
         }
     }
+
+    public void addBomb(float x, float z, int strength)
+    {
+        allBombs.Add(new Bomb(x, z, strength));
+    }
+
     public Player getPlayer(int index)
     {
         return allPlayers[index];
     }
+
     public void addPlayer(Socket ip, string user)
     {
         //grab one of these default locations
@@ -194,14 +271,15 @@ public class Game
     {
         return allPlayers.Length;// allPlayers.Count;
     }
+
     public void playerready(int index)
     {
         getPlayer(index).ready();
         readycount++;
         //send message to all players of who's ready
-        for (int i = 0; i < allPlayers.Length && allPlayers[i]!=null; i++)
+        for (int i = 0; i < allPlayers.Length && allPlayers[i] != null; i++)
         {
-            AsynchronousSocketListener.lazySend("P"+(i+1) +"R: ready");
+            AsynchronousSocketListener.lazySend("P" + (i + 1) + "R: ready");
         }
         checkready();
     }
@@ -214,6 +292,7 @@ public class Game
             //after countdown
         }
     }
+
     public Player findPlayer(Socket client)
     {
         foreach (Player player in allPlayers)
@@ -263,9 +342,8 @@ public class DatabaseHandler
 
     public DatabaseHandler()
     {
-        //server = IP.mySQL;
+        server = IP.mySQL;
         //server = "169.234.20.168";
-        server = "127.0.0.1";//default on Anthony's device
         db = "BombermanDB";
         serveruser = "root";
         serverpass = "master";
@@ -415,7 +493,7 @@ public class MessageHandler
         else
         {
             AsynchronousSocketListener.lazySend("Login Failed");
-        }   
+        }
         //AsynchronousSocketListener.lazySend("Login Success<EOF>");
     }
 
@@ -448,7 +526,6 @@ public class MessageHandler
         //of some sort of client object with ip/socket and username
         //game will send messages about the other players within the same lobby
         m.message = m.message.Substring(14);
-
         //IPAddress.Parse(((IPEndPoint)m.client.RemoteEndPoint).Address.ToString());
         games[games.Count - 1].addPlayer(m.client, m.message); //.Substring(0, m.message.IndexOf("<")));
         count++;
@@ -459,18 +536,19 @@ public class MessageHandler
         }
     }
 
-    private static void updatePlayerLocation(Message m) // for player location: P;T;10;20;
+    private static void updatePlayerLocation(Message m) // for player location: Player;index;T/F;x;z;
     {
         try
         {
             string header = m.messageParts[0];
-            string deadOrAlive = m.messageParts[1];
-            float x = Convert.ToSingle(m.messageParts[2]);
-            float z = Convert.ToSingle(m.messageParts[3]);
+            //string playerNum = m.messageParts[1]; // discarded because Server knows who it came from
+            string deadOrAlive = m.messageParts[2];
+            float x = Convert.ToSingle(m.messageParts[3]);
+            float z = Convert.ToSingle(m.messageParts[4]);
             Game game = games[0]; // #hardcoding lyfe
             Game.Player player = game.findPlayer(m.client);
 
-            if (header != "P")
+            if (header != "Player")
             {
                 return;
             }
@@ -493,21 +571,24 @@ public class MessageHandler
         }
     }
 
-    private static void bombProposal(Message m) // for bomb proposal: B;10;20;[strength];
+    private static void bombProposal(Message m) // for bomb proposal: Bomb;x;z;strength;
     {
         try
         {
             string header = m.messageParts[0];
             float x = Convert.ToSingle(m.messageParts[1]);
             float z = Convert.ToSingle(m.messageParts[2]);
+            int strength = Convert.ToInt32(m.messageParts[3]); // might break
             Game game = games[0]; // #hardcoding lyfe
 
-            if (header != "B")
+            if (header != "Bomb")
             {
                 return;
             }
 
-            // Implement here. Add bomb and send proposal to all clients.
+            // Implement here. No need to receive ACKs for now.
+            // The bomb will be sent out to other players soon, but not here.
+            game.addBomb(x, z, strength);
         }
         catch (Exception e)
         {
@@ -515,15 +596,17 @@ public class MessageHandler
         }
     }
 
-    private static void bombACK(Message m) // for ACKing bomb: ACK;B;10;20;[strength];
+    /*private static void bombACK(Message m) // for ACKing bomb: ACK;B;10;20;[strength];
     {
 
-    }
+    }*/
+
     private static void playerReady(Message m)
     {
         int index = int.Parse(m.message.Substring(m.message.Length - 1));
         games[games.Count - 1].playerready(index);
     }
+
     private static void cleanEOF(Message m)
     {
         // Separate all Message contents by <EOF> tag.
@@ -594,7 +677,7 @@ public class MessageHandler
                         {
                             playerReady(m);
                         }
-                        else if (m.message.Substring(0, 1) == "P") // Player just sent you a location, server-senpai!
+                        else
                         {
                             m.split();
 
@@ -606,10 +689,10 @@ public class MessageHandler
                             {
                                 bombProposal(m);
                             }
-                            else if (m.message.Substring(0, 5) == "ACK;B") // One more player placed the proposed bomb
+                            /*else if (m.message.Substring(0, 5) == "ACK;B") // One more player placed the proposed bomb
                             {
                                 bombACK(m);
-                            }
+                            }*/
                         }
                     }
                     catch (Exception e)
@@ -755,6 +838,7 @@ public class AsynchronousSocketListener
 
                 // I haven't figured out how to retrieve the IP yet, so it's "content, content" for now.
                 // It should be "IP, content" later. #HalpIsNeeded.
+
                 //Console.WriteLine("Message Received: " + content);
 
                 MessageHandler.addMessage(listener, content);
@@ -813,10 +897,10 @@ public class AsynchronousSocketListener
     public static void lazySend(String content)
     {
         Send(listener, content + "<EOF>");
-        Console.WriteLine("Sending: "+content +"<EOF>");
+        Console.WriteLine("Sending: " + content + "<EOF>");
     }
 
-    public static void directedsend(Socket target, string content)
+    public static void directedSend(Socket target, string content)
     {
         Send(target, content);
         Console.WriteLine("Message: " + content + " was sent to " + IPAddress.Parse(((IPEndPoint)listener.RemoteEndPoint).Address.ToString()));
@@ -849,7 +933,8 @@ public class AsynchronousSocketListener
 
             Console.WriteLine("You have sent " + timesSent + " messages.");
 
-        }*/ // END of timer implementation
+        }*/
+        // END of timer implementation
 
         // Feel free to add more threads here to have parallel loops/tasks
         // or just to write more functions and other things.
