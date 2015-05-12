@@ -129,7 +129,7 @@ public class Client : MonoBehaviour
 			
 			// Receive the response from the remote device.
             Receive(recv_so);
-            recv_so.receiveDone.WaitOne(500);
+            recv_so.receiveDone.WaitOne(1000);
             // Write the response to the console.
             Debug.Log("Response received : " + recv_so.response);
 			connected = true;
@@ -150,10 +150,13 @@ public class Client : MonoBehaviour
 		}
 		//check which scene im in and do a thing
 		// ------------------Anthony------------------------//
-		if (GameObject.Find ("lobby") != null) {
+		if (GameObject.Find ("lobby") != null) 
+		{
 			//contact server and tell it it's in the lobby
 			lazySend ("Awaiting Game " + myuser);
-		} else if (GameObject.Find ("reg") != null) {
+		} 
+		else if (GameObject.Find ("reg") != null) 
+		{
 			//Debug.Log("Register page");
 			registerinfo += GameObject.Find ("reg").GetComponentInChildren<register> ().getsendinfo ();
 			lazySend (registerinfo);
@@ -164,13 +167,17 @@ public class Client : MonoBehaviour
 				//connected = false;
 				GameObject.Find ("reg").GetComponentInChildren<register> ().dbg = "Register Failed";
 			}
-		} else if (GameObject.Find ("login") != null) {
+		} 
+		else if (GameObject.Find ("login") != null) 
+		{
 			logininfo += GameObject.Find ("login").GetComponentInChildren<login> ().strsend ();
 			lazySend (logininfo);
 			if (connected) {
 				Application.LoadLevel ("Lobby");
 			}
-		} else if (GameObject.Find ("bullet") != null) {
+		} 
+		else if (GameObject.Find ("bullet") != null) 
+		{
 			player.GetComponent<playerMovement>().clientid = myindex;
 		}
 		//-----------Anthony--------------------//
@@ -241,16 +248,27 @@ public class Client : MonoBehaviour
 				{
 					//--Anthony--added these various if's
 
-					//for the lobby
-					if(content.Contains("P1L: ")||content.Contains("P2L: ")||content.Contains("P3L: ")||content.Contains("P4L: "))
+					if(content.Contains("Login Success"))//Login Success test<EOF>
 					{
-						Debug.Log(content);
+						Debug.Log("Login Success");
+						connected = true;
+						//Debug.Log(content);
+						content = content.Substring(14);//username<EOF>
+						myuser = content.Substring(0,content.Length-5);
+						Debug.Log("Client.cs line 290: "+myuser);
+					}
+					//for the lobby
+					else if(content.Contains("P1L: ")||content.Contains("P2L: ")||content.Contains("P3L: ")||content.Contains("P4L: "))
+					{
+						//Debug.Log("Line 254 "+content);
+						//Debug.Log("Line 255 "+content.Substring(1,1));
 						int ind = int.Parse(content.Substring(1,1));//get the player number from the msg
+						//Debug.Log(ind);
 					  	ind--;
 					  	string msg = content.Substring(5);//username|x|y<EOF>
 					  	int index = msg.IndexOf("|");
 					  	string user = msg.Substring(0,index);
-
+						//Debug.Log("Line 262: "+user);
 					 	msg = msg.Substring(index+1);//x|y<EOF>
 					 	index = msg.IndexOf("|");
 					 	int x = int.Parse (msg.Substring(0,index));
@@ -266,18 +284,16 @@ public class Client : MonoBehaviour
 					  	}
 					 	lobby.setup(user,ind);
 					}
+					else if(content.Contains("P1R: ready")||content.Contains("P2R: ready")||content.Contains("P3R: ready")||content.Contains("P4R: ready"))
+					{
+						int ind = int.Parse(content.Substring(1,1));//get the player number from the msg
+						ind--;
+						lobby.readyupdates(ind);
+					}
 					else if(content == "Login Failed<EOF>")
 					{
 						Debug.Log("Login Failed");
 						connected = false;
-					}
-					else if(content.Contains("Login Success"))//Login Success test<EOF>
-					{
-						Debug.Log("Login Success");
-						connected = true;
-						Debug.Log(content);
-						content = content.Substring(14);//username<EOF>
-						myuser = content.Substring(0,content.Length-5);
 					}
 					else if(content.Contains("Registered"))
 					{
@@ -315,7 +331,14 @@ public class Client : MonoBehaviour
             Debug.Log(e.ToString());
         }
     }
-
+	public static string getUser()
+	{
+		return myuser;
+	}
+	public static int getIndex()
+	{
+		return myindex;
+	}
 	
 	private void Send(Socket client, String data, StateObject so)
 	{
@@ -337,7 +360,7 @@ public class Client : MonoBehaviour
 
             // Complete sending the data to the remote device.
             int bytesSent = client.EndSend(ar);
-            Debug.Log("Sent " + bytesSent + " bytes to server.");
+            //Debug.Log("Sent " + bytesSent + " bytes to server.");
 
             // Signal that all bytes have been sent.
             so.sendDone.Set();
@@ -369,10 +392,10 @@ public class Client : MonoBehaviour
 		client.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallback), send_so);
 
 		//Send(client, content+"<EOF>", send_so);
-		send_so.sendDone.WaitOne();
+		send_so.sendDone.WaitOne(100);
 
 		lazyReceive();
-		recv_so.receiveDone.WaitOne(10);
+		recv_so.receiveDone.WaitOne(100);
 		
 		// Write the response to the console.
 		//string res = recv_so.response;

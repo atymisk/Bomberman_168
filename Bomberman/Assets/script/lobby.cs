@@ -28,14 +28,18 @@ public class lobby : MonoBehaviour
 		Debug.Log((ready? "ready" : "not ready"));
 		if(ready)
 		{
-			c.sendmsg("This player is ready");
+			c.sendmsg("This player is ready " + Client.getIndex());
 		}
+	}
+	public static void readyupdates(int index)
+	{
+		lists[index] += " - Ready!";
 	}
 
 	public static void setup(string p,int index)
 	{
 		lists[index] = p;
-		Debug.Log(lists[index]);
+		Debug.Log("Lobby Script Line 38: "+lists[index]);
 	}
 	public void updatetxt()
 	{

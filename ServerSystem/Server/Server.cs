@@ -41,11 +41,13 @@ public class Game
     public Player[] allPlayers;
     public int nextindex;
     public List<Bomb> allBombs;
+    private int readycount;
 
     public Game()
     {
         allPlayers = new Player[4];//at most 4 in a single game
         nextindex = 0;//starting position, when one player is added: next position is 1
+        readycount = 0;
     }
     // A bit incomplete as I'm not sure how you guys want it
     public class Player
@@ -145,7 +147,10 @@ public class Game
                 + "|" + allPlayers[i].x + "|" + allPlayers[i].z);
         }
     }
-
+    public Player getPlayer(int index)
+    {
+        return allPlayers[index];
+    }
     public void addPlayer(Socket ip, string user)
     {
         //grab one of these default locations
@@ -189,7 +194,26 @@ public class Game
     {
         return allPlayers.Length;// allPlayers.Count;
     }
-
+    public void playerready(int index)
+    {
+        getPlayer(index).ready();
+        readycount++;
+        //send message to all players of who's ready
+        for (int i = 0; i < allPlayers.Length && allPlayers[i]!=null; i++)
+        {
+            AsynchronousSocketListener.lazySend("P"+(i+1) +"R: ready");
+        }
+        checkready();
+    }
+    public void checkready()
+    {
+        if (readycount >= 2 && readycount == allPlayers.Length)
+        {
+            //start countdown??
+            Console.WriteLine("Game Starting...");
+            //after countdown
+        }
+    }
     public Player findPlayer(Socket client)
     {
         foreach (Player player in allPlayers)
@@ -239,8 +263,9 @@ public class DatabaseHandler
 
     public DatabaseHandler()
     {
-        server = IP.mySQL;
+        //server = IP.mySQL;
         //server = "169.234.20.168";
+        server = "127.0.0.1";//default on Anthony's device
         db = "BombermanDB";
         serveruser = "root";
         serverpass = "master";
@@ -390,7 +415,7 @@ public class MessageHandler
         else
         {
             AsynchronousSocketListener.lazySend("Login Failed");
-        }
+        }   
         //AsynchronousSocketListener.lazySend("Login Success<EOF>");
     }
 
@@ -423,6 +448,7 @@ public class MessageHandler
         //of some sort of client object with ip/socket and username
         //game will send messages about the other players within the same lobby
         m.message = m.message.Substring(14);
+
         //IPAddress.Parse(((IPEndPoint)m.client.RemoteEndPoint).Address.ToString());
         games[games.Count - 1].addPlayer(m.client, m.message); //.Substring(0, m.message.IndexOf("<")));
         count++;
@@ -493,7 +519,11 @@ public class MessageHandler
     {
 
     }
-
+    private static void playerReady(Message m)
+    {
+        int index = int.Parse(m.message.Substring(m.message.Length - 1));
+        games[games.Count - 1].playerready(index);
+    }
     private static void cleanEOF(Message m)
     {
         // Separate all Message contents by <EOF> tag.
@@ -560,7 +590,11 @@ public class MessageHandler
                         {
                             awaitingGame(m);
                         }
-                        else
+                        else if (m.message.Contains("This player is ready "))
+                        {
+                            playerReady(m);
+                        }
+                        else if (m.message.Substring(0, 1) == "P") // Player just sent you a location, server-senpai!
                         {
                             m.split();
 
@@ -715,11 +749,13 @@ public class AsynchronousSocketListener
             {
                 // All the data has been read from the client, add into the message processing list.
                 Console.WriteLine("Read {0} bytes from socket." /*\n Data : {1}"*/, content.Length, content);
-                IPAddress IP = IPAddress.Parse(((IPEndPoint)listener.RemoteEndPoint).Address.ToString());
+                /*IPAddress IP = IPAddress.Parse(((IPEndPoint)listener.RemoteEndPoint).Address.ToString());
                 IPAddress IP2 = IPAddress.Parse(((IPEndPoint)listener.LocalEndPoint).Address.ToString());
-                Console.WriteLine("\nRemoteIP: " + IP + ", LocalIP: " + IP2 + "\n");
+                Console.WriteLine("\nRemoteIP: " + IP + ", LocalIP: " + IP2 + "\n");*/
+
                 // I haven't figured out how to retrieve the IP yet, so it's "content, content" for now.
                 // It should be "IP, content" later. #HalpIsNeeded.
+                //Console.WriteLine("Message Received: " + content);
 
                 MessageHandler.addMessage(listener, content);
 
@@ -766,7 +802,7 @@ public class AsynchronousSocketListener
 
             // Complete sending the data to the remote device.
             int bytesSent = handler.EndSend(ar);
-            Console.WriteLine("Sent {0} bytes to client.", bytesSent);
+            //Console.WriteLine("Sent {0} bytes to client.", bytesSent);
         }
         catch (Exception e)
         {
@@ -777,7 +813,7 @@ public class AsynchronousSocketListener
     public static void lazySend(String content)
     {
         Send(listener, content + "<EOF>");
-        Console.WriteLine(content);
+        Console.WriteLine("Sending: "+content +"<EOF>");
     }
 
     public static void directedsend(Socket target, string content)
