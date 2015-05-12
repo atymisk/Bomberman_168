@@ -6,6 +6,13 @@ using System.Threading;
 using System.Collections.Generic;
 using MySql.Data.MySqlClient;
 
+public class IP
+{
+    public const string Anthony = "169.234.20.168";
+    public const string Faye = "169.234.15.78";
+    public const string mySQL = IP.Anthony;
+}
+
 // State object for reading client data asynchronously
 public class StateObject
 {
@@ -42,19 +49,19 @@ public class Game
     // A bit incomplete as I'm not sure how you guys want it
     public class Player
     {
-        public enum Status { NONE,WAITING,READY, ALIVE, DEAD }; // others to be added
+        public enum Status { NONE, WAITING, READY, ALIVE, DEAD }; // others to be added
         public Status status = Status.NONE;
         public IPAddress IP;
         public String username;
         public int index;//--added by Anthony for lobby logic
         //public Socket clientSocket;
-        public int x, y;
+        public float x, z;
 
-        public Player(IPAddress IP, int x, int y, int index, String username)
+        public Player(IPAddress IP, float x, float z, int index, String username)
         {
             this.IP = IP;
             this.x = x;
-            this.y = y;
+            this.z = z;
             this.index = index;
             this.username = username;
         }
@@ -66,13 +73,13 @@ public class Game
         public enum Status { NONE, PENDING, TICKING, DESTROYED };
         public Status status = Status.NONE;
         public int ACKs = 0;
-        public int x, y;
+        public float x, z;
 
-        public Bomb(int x, int y)
+        public Bomb(float x, float z)
         {
             status = Status.PENDING;
             this.x = x;
-            this.y = y;
+            this.z = z;
         }
 
         // Add to the total number of players who have
@@ -95,27 +102,27 @@ public class Game
     }
     public void lobby()//whenever theres anyone
     {
-        for(int i = 0; i < allPlayers.Length; i++)
+        for (int i = 0; i < allPlayers.Length; i++)
         {
             //send to all
             if (allPlayers[i] == null)
             {
                 break;
             }
-            AsynchronousSocketListener.lazySend("P" + (i+1) + "L: " + allPlayers[i].username 
-                + "|" + allPlayers[i].x + "|" + allPlayers[i].y + "<EOF>");
+            AsynchronousSocketListener.lazySend("P" + (i + 1) + "L: " + allPlayers[i].username
+                + "|" + allPlayers[i].x + "|" + allPlayers[i].y);
         }
     }
     public void addPlayer(IPAddress ip, string user)
     {
         //grab one of four sets of coordinates
-        addPlayer(ip,-1, -1, user);//-1 for now
+        addPlayer(ip, -1, -1, user);//-1 for now
     }
     public void addPlayer(IPAddress ip, int x, int y, string user)
     {
         if (nextindex != 4)//no more after position 3
         {
-            allPlayers[nextindex] = new Player(ip, x, y,nextindex,user);
+            allPlayers[nextindex] = new Player(ip, x, y, nextindex, user);
             nextindex++;
             lobby();//have the server send player info back to all clients
             //return nextindex - 1;//send index to the client?
@@ -137,13 +144,17 @@ public class DatabaseHandler
     private string serveruser;
     private string serverpass;
 
-    public DatabaseHandler() 
+    public DatabaseHandler()
     {
+<<<<<<< HEAD
+        server = IP.mySQL;
+=======
         server = "169.234.20.168";
+>>>>>>> origin/master
         db = "BombermanDB";
         serveruser = "root";
         serverpass = "master";
-        string connectionstring = "SERVER=" + server + ";PORT = 3306;"/* DATABASE=" + db + ";"*/ + "user id=" 
+        string connectionstring = "SERVER=" + server + ";PORT = 3306;"/* DATABASE=" + db + ";"*/ + "user id="
                 + serveruser + ";" + "PASSWORD=" + serverpass + ";" + "connection timeout=30;";
         connect = new MySqlConnection(connectionstring);
     }
@@ -194,7 +205,7 @@ public class DatabaseHandler
         
     }*/
     public static bool verify(string user, string pass)
-    {   
+    {
         if (OpenConnection())
         {
             string[] list = new string[2];
@@ -215,13 +226,18 @@ public class DatabaseHandler
     }
 }
 
+
 // The class that handles messages. All methods are currently static.
 public class MessageHandler
 {
     // Currently all un-parsed messages
     public static List<Message> allMessages = new List<Message>();
+    
     public static List<Game> games = new List<Game>();
     public static int count = 0;//every 4, create/add a new Game object
+
+    public static string[] EOF = new string[] { "<EOF>" };
+
     public class Message
     {
         public Socket client;
@@ -240,10 +256,110 @@ public class MessageHandler
         allMessages.Add(new Message(client, message));
     }
 
+    private static void attemptingLogin(Message m)
+    {
+        //parse the string for user and pass
+        //Attempting Login: username|password<EOF>
+        string user = "";
+        string pass = "";
+        string msg = m.message.Substring(18);//username|password<EOF>
+        int index = msg.IndexOf("|");
+        user = msg.Substring(0, index);//username
+
+        msg = msg.Substring(index + 1);//password<EOF> this doesnt
+        //index = msg.IndexOf("<");//this works
+        pass = msg; //.Substring(0);
+
+        //Console.WriteLine("Username: "+user + "\n" +"Password: "+ pass);
+
+        //check the database with the user and pass
+        if (DatabaseHandler.verify(user, pass))
+        {
+            AsynchronousSocketListener.lazySend("Login Success " + user);
+            //add player object here?
+        }
+        else
+        {
+            AsynchronousSocketListener.lazySend("Login Failed");
+        }
+        //AsynchronousSocketListener.lazySend("Login Success<EOF>");
+    }
+
+    private static void registering(Message m)
+    {
+
+        string msg = m.message.Substring(13);//username|password<EOF>
+        int index = msg.IndexOf("|");
+        string user = msg.Substring(0, index);
+        msg = msg.Substring(index + 1);
+        //index = msg.IndexOf("<");
+        string pass = msg; //.Substring(0, index);
+        Console.WriteLine(user + "\n" + pass);
+        if (DatabaseHandler.adduser(user, pass))
+        {
+            AsynchronousSocketListener.lazySend("Registered " + user);
+            //add player object here?
+        }
+        else
+        {
+            AsynchronousSocketListener.lazySend("Invalid Registery");
+        }
+    }
+
+    private static void awaitingGame(Message m)
+    {
+        //move the game state to lobby
+        //have the game add the player who sent the msg
+        //need the username and the ip at minimum, need to probably make a list 
+        //of some sort of client object with ip/socket and username
+        //game will send messages about the other players within the same lobby
+        m.message = m.message.Substring(14);
+        IPAddress.Parse(((IPEndPoint)m.client.RemoteEndPoint).Address.ToString());
+        games[games.Count - 1].addPlayer(
+            IPAddress.Parse(((IPEndPoint)m.client.RemoteEndPoint).Address.ToString())
+            , m.message); //.Substring(0, m.message.IndexOf("<")));
+        count++;
+        if (count % 4 == 0)//reaches 4 players
+        {
+            games.Add(new Game());
+            count = 0;
+        }
+    }
+
+    private static void updatePlayerLocation(Message m) // for player location: P;T;10;20;
+    {
+
+    }
+
+    private static void bombProposal(Message m) // for bomb proposal: B;10;20;[strength];
+    {
+
+    }
+
+    private static void bombACK(Message m) // for ACKing bomb: ACK;B;10;20;[strength];
+    {
+
+    }
+
+    private static void cleanEOF(Message m)
+    {
+        // Separate all Message contents by <EOF> tag.
+        string[] messages = m.message.Split(EOF, StringSplitOptions.None);
+        if (messages.Length > 0)
+        {
+            foreach (string message in messages)
+            {
+                addMessage(m.client, message);
+            }
+        }
+        allMessages.Remove(m);
+    }
+
     // Process/parse all the messages received
     public static void processMessages()
     {
         games.Add(new Game());//hopefully this is only called once when the thread starts
+        Console.WriteLine("A new game has been added. If you are seeing me for the second time, something went wrong.");
         while (true)
         {
             while (allMessages.Count > 0)
@@ -251,80 +367,44 @@ public class MessageHandler
                 Message m = allMessages[0];
                 if (m != null)
                 {
+                    if (m.message.Contains("<EOF>"))
+                    {
+                        cleanEOF(m);
+                        continue;
+                    }
+
                     // This is where you put if-statements for message contents, or calls
                     // to other soon-to-be-written-hopefully methods to keep it clean.
                     Console.WriteLine(m.message+"\n");
+
                     if (m.message.Contains("Attempting Login: "))
                     {
-                        //parse the string for user and pass
-                        //Attempting Login: username|password<EOF>
-                        string user = "";
-                        string pass = "";
-                        string msg = m.message.Substring(18);//username|password<EOF>
-                        int index = msg.IndexOf("|");
-                        user = msg.Substring(0, index);//username
-
-                        msg = msg.Substring(index+1);//password<EOF> this doesnt
-                        index = msg.IndexOf("<");//this works
-                        pass = msg.Substring(0, index);
-                        
-                        //Console.WriteLine("Username: "+user + "\n" +"Password: "+ pass);
-
-                        //check the database with the user and pass
-                        if (DatabaseHandler.verify(user, pass))
-                        {
-                            AsynchronousSocketListener.lazySend("Login Success " + user + "<EOF>");
-                            //add player object here?
-                        }
-                        else
-                        {
-                            AsynchronousSocketListener.lazySend("Login Failed<EOF>");
-                        }
-                        //AsynchronousSocketListener.lazySend("Login Success<EOF>");
+                        attemptingLogin(m);
                     }
                     else if (m.message.Contains("Registering: "))//Registering: username|password<EOF>
                     {
-
-                        string msg = m.message.Substring(13);//username|password<EOF>
-                        int index = msg.IndexOf("|");
-                        string user = msg.Substring(0, index);
-                        msg = msg.Substring(index + 1);
-                        index = msg.IndexOf("<");
-                        string pass = msg.Substring(0, index);
-                        Console.WriteLine(user + "\n" + pass);
-                        if (DatabaseHandler.adduser(user, pass))
-                        {
-                            AsynchronousSocketListener.lazySend("Registered "+user+"<EOF>");
-                            //add player object here?
-                        }
-                        else
-                        {
-                            AsynchronousSocketListener.lazySend("Invalid Registery<EOF>");
-                        }
+                        registering(m);
                     }
                     else if(m.message.Contains("Awaiting Game"))//Awaiting Game username<EOF>
                     {
-                        //move the game state to lobby
-                        //have the game add the player who sent the msg
-                            //need the username and the ip at minimum, need to probably make a list 
-                            //of some sort of client object with ip/socket and username
-                        //game will send messages about the other players within the same lobby
-                        m.message = m.message.Substring(14);
-                        IPAddress.Parse(((IPEndPoint)m.client.RemoteEndPoint).Address.ToString());
-                        games[games.Count - 1].addPlayer(
-                            IPAddress.Parse(((IPEndPoint)m.client.RemoteEndPoint).Address.ToString())
-                            ,m.message.Substring(0,m.message.IndexOf("<")));
-                        count++;
-                        if (count % 4 == 0)//reaches 4 players
-                        {
-                            games.Add(new Game());
-                            count = 0;
-                        }
+                        awaitingGame(m);
+                    }
+                    else if (m.message.Substring(0, 1) == "P") // Player just sent you a location, server-senpai!
+                    {
+                        updatePlayerLocation(m);
+                    }
+                    else if (m.message.Substring(0, 1) == "B") // Bomb proposal, be nice and approve asap
+                    {
+                        bombProposal(m);
+                    }
+                    else if (m.message.Substring(0, 5) == "ACK;B") // One more player placed the proposed bomb
+                    {
+                        bombACK(m);
                     }
                     allMessages.Remove(m);
                 }
             }
-        }
+        } 
     }
 }
 
@@ -332,7 +412,7 @@ public class AsynchronousSocketListener
 {
     // Thread signal.
     public static AutoResetEvent allDone = new AutoResetEvent(false);
-    
+
     // List of all the clients, it should be changed into
     // a Dictionary<[IP address], [Sockets]> later on.
     public static List<Socket> allClients = new List<Socket>();
@@ -344,9 +424,9 @@ public class AsynchronousSocketListener
     private static IPEndPoint anyEndPoint;
 
 
-    public AsynchronousSocketListener() 
+    public AsynchronousSocketListener()
     {
-        
+
     }
 
     // This is called only once. Don't look back. Keep moving.
@@ -367,7 +447,7 @@ public class AsynchronousSocketListener
         anyEndPoint = new IPEndPoint(IPAddress.Any, 11000);
 
         //setup a game, one at the beginning
-       //allGames.Add(new Game());
+        //allGames.Add(new Game());
 
         // Bind the socket to selected endpoint and listen/"wait" for incoming connections.
         try
@@ -454,7 +534,7 @@ public class AsynchronousSocketListener
                 Console.WriteLine("\nRemoteIP: " + IP + ", LocalIP: " + IP2 + "\n");
                 // I haven't figured out how to retrieve the IP yet, so it's "content, content" for now.
                 // It should be "IP, content" later. #HalpIsNeeded.
-                
+
                 MessageHandler.addMessage(listener, content);
 
                 //Console.WriteLine("\n\n");
@@ -510,7 +590,7 @@ public class AsynchronousSocketListener
 
     public static void lazySend(String content)
     {
-        Send(listener, content);
+        Send(listener, content+"<EOF>");
         Console.WriteLine(content);
     }
 
@@ -537,7 +617,7 @@ public class AsynchronousSocketListener
             lazySend("Heyyos Client. This is my " + ++timesSent + "th time!");
 
             Console.WriteLine("You have sent " + timesSent + " messages.");
-            
+
         } // END of timer implementation
 
         // Feel free to add more threads here to have parallel loops/tasks
