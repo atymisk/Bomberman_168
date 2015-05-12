@@ -66,10 +66,19 @@ public class Game
             this.index = index;
             this.username = username;
         }
+        public void alive()
+        {
+            this.status = Status.ALIVE;
+        }
         public void dead()
         {
             this.status = Status.DEAD;
         }
+        public bool isDead()
+        {
+            return this.status == Status.DEAD;
+        }
+
         public void inLobby()
         {
             this.status = Status.WAITING;
@@ -122,6 +131,7 @@ public class Game
             status = Status.DESTROYED;
         }
     }
+
     public void lobby()//whenever theres anyone
     {
         for (int i = 0; i < allPlayers.Length; i++)
@@ -135,6 +145,7 @@ public class Game
                 + "|" + allPlayers[i].x + "|" + allPlayers[i].z);
         }
     }
+
     public void addPlayer(Socket ip, string user)
     {
         //grab one of these default locations
@@ -162,6 +173,7 @@ public class Game
         }
         addPlayer(ip, x, z, user);//-1 for now
     }
+
     public void addPlayer(Socket ip, float x, float z, string user)
     {
         if (nextindex != 4)//no more after position 3
@@ -178,6 +190,43 @@ public class Game
         return allPlayers.Length;// allPlayers.Count;
     }
 
+    public Player findPlayer(Socket client)
+    {
+        foreach (Player player in allPlayers)
+        {
+            if (player.clientSocket == client)
+            {
+                return player;
+            }
+        }
+        Console.WriteLine("Your Player object cannot be found. So here is a null.");
+        return null;
+    }
+
+    public void checkGameStatus()
+    {
+        int numOfPlayers = getplayerCount();
+        int winner = -1;
+        for (int i = 0; i < getplayerCount(); i++)
+        {
+            if (allPlayers[i].isDead())
+            {
+                numOfPlayers--;
+                continue;
+            }
+            winner = i;
+        }
+        switch (numOfPlayers)
+        {
+            case 1: // we have a winner. not sure who it is though.
+                Console.WriteLine("Player " + (winner + 1) + " won!");
+                break;
+            case 0: // everybody died lulz
+                Console.WriteLine("Everybody died! Oh noes!");
+                break;
+            default: break;
+        }
+    }
 }
 //--Anthony--added the database connection
 public class DatabaseHandler
@@ -282,16 +331,31 @@ public class MessageHandler
     public static int count = 0;//every 4, create/add a new Game object
 
     public static string[] EOF = new string[] { "<EOF>" };
+    public static char semicolon = ';';
 
     public class Message
     {
         public Socket client;
         public string message;
+        public List<string> messageParts;
 
         public Message(Socket client, string message)
         {
             this.client = client;
             this.message = message;
+        }
+
+        public List<string> split()
+        {
+            string[] strings = message.Split(semicolon);
+            foreach (string s in messageParts)
+            {
+                if (s != "")
+                {
+                    messageParts.Add(s);
+                }
+            }
+            return messageParts;
         }
     }
 
@@ -371,12 +435,58 @@ public class MessageHandler
 
     private static void updatePlayerLocation(Message m) // for player location: P;T;10;20;
     {
+        try
+        {
+            string header = m.messageParts[0];
+            string deadOrAlive = m.messageParts[1];
+            float x = Convert.ToSingle(m.messageParts[2]);
+            float z = Convert.ToSingle(m.messageParts[3]);
+            Game game = games[0]; // #hardcoding lyfe
+            Game.Player player = game.findPlayer(m.client);
 
+            if (header != "P")
+            {
+                return;
+            }
+            switch (deadOrAlive)
+            {
+                case "T":
+                    player.alive();
+                    break;
+                case "F":
+                    player.dead();
+                    break;
+                default: return;
+            }
+            player.x = x;
+            player.z = z;
+        }
+        catch (Exception e)
+        {
+            return;
+        }
     }
 
     private static void bombProposal(Message m) // for bomb proposal: B;10;20;[strength];
     {
+        try
+        {
+            string header = m.messageParts[0];
+            float x = Convert.ToSingle(m.messageParts[1]);
+            float z = Convert.ToSingle(m.messageParts[2]);
+            Game game = games[0]; // #hardcoding lyfe
 
+            if (header != "B")
+            {
+                return;
+            }
+
+            // Implement here. Add bomb and send proposal to all clients.
+        }
+        catch (Exception e)
+        {
+            return;
+        }
     }
 
     private static void bombACK(Message m) // for ACKing bomb: ACK;B;10;20;[strength];
@@ -407,7 +517,18 @@ public class MessageHandler
         {
             while (allMessages.Count > 0)
             {
+                // Parse the first message that does not include an EOF tag.
+                // If all messages have EOF tag, clean it.
                 Message m = allMessages[0];
+                foreach (Message message in allMessages)
+                {
+                    if ((message.message != "") && (!message.message.Contains("<EOF>")))
+                    {
+                        m = message;
+                        break;
+                    }
+                }
+
                 if (m != null)
                 {
                     if (m.message.Contains("<EOF>"))
@@ -427,7 +548,6 @@ public class MessageHandler
 
                     try
                     {
-
                         if (m.message.Contains("Attempting Login: "))
                         {
                             attemptingLogin(m);
@@ -440,17 +560,22 @@ public class MessageHandler
                         {
                             awaitingGame(m);
                         }
-                        else if (m.message.Substring(0, 1) == "P") // Player just sent you a location, server-senpai!
+                        else
                         {
-                            updatePlayerLocation(m);
-                        }
-                        else if (m.message.Substring(0, 1) == "B") // Bomb proposal, be nice and approve asap
-                        {
-                            bombProposal(m);
-                        }
-                        else if (m.message.Substring(0, 5) == "ACK;B") // One more player placed the proposed bomb
-                        {
-                            bombACK(m);
+                            m.split();
+
+                            if (m.message.Substring(0, 1) == "P") // Player just sent you a location, server-senpai!
+                            {
+                                updatePlayerLocation(m);
+                            }
+                            else if (m.message.Substring(0, 1) == "B") // Bomb proposal, be nice and approve asap
+                            {
+                                bombProposal(m);
+                            }
+                            else if (m.message.Substring(0, 5) == "ACK;B") // One more player placed the proposed bomb
+                            {
+                                bombACK(m);
+                            }
                         }
                     }
                     catch (Exception e)
@@ -466,6 +591,7 @@ public class MessageHandler
             }
         }
     }
+
 }
 
 public class AsynchronousSocketListener
@@ -671,8 +797,11 @@ public class AsynchronousSocketListener
         messageThread.Start();
 
         DatabaseHandler db = new DatabaseHandler();
+
+
+
         // This is for testing purposes only. Delete or comment out after done.
-        Console.WriteLine("After you have established a connection...");
+        /*Console.WriteLine("After you have established a connection...");
         int timesSent = 0;
         while (true)
         {
@@ -684,7 +813,7 @@ public class AsynchronousSocketListener
 
             Console.WriteLine("You have sent " + timesSent + " messages.");
 
-        } // END of timer implementation
+        }*/ // END of timer implementation
 
         // Feel free to add more threads here to have parallel loops/tasks
         // or just to write more functions and other things.

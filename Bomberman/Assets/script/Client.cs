@@ -78,7 +78,7 @@ public class Client : MonoBehaviour
 	string registerinfo = "Registering: ";
     string logininfo = "Attempting Login: ";
 	private static string myuser = "";
-	private static int myindex = 1;
+	private static int myindex = 0;
 	//need notion of being connected --Anthony
 	public static bool connected = false;
 	//public static bool inlobby = false;

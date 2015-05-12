@@ -7,6 +7,7 @@ public class playerMovement : MonoBehaviour {
 	public Rigidbody rb, bomb, clone;
 	public Vector3 movement;
 	public int timer = 100;
+	public int dropTime;
 	public int strength;
 	public int playerid, clientid;
 	public GameObject client;
@@ -18,7 +19,9 @@ public class playerMovement : MonoBehaviour {
 
 	void Update() {
 
-		if (Input.GetButtonDown("Fire1") && !active && playerid == clientid) {
+		if (Input.GetButtonDown("Fire1") && !active && playerid == clientid && timer >= dropTime) {
+			timer -= dropTime;
+			Client.lazySend("B;" + rb.position[0].ToString() + ";" + rb.position[2].ToString() + ";" + strength.ToString() + ";");
 			clone = Instantiate(bomb, rb.position, Quaternion.identity) as Rigidbody;
 			var theScript = clone.GetComponent<bombLogic>();
 			theScript.active = true;
@@ -28,7 +31,9 @@ public class playerMovement : MonoBehaviour {
 	}
 	
 	void FixedUpdate () {
-
+		if (timer < 100) {
+			timer++;
+		}
 		if (playerid == clientid) {
 			client.GetComponent<Client>().x = rb.position [0];
 			client.GetComponent<Client>().z = rb.position [2];
