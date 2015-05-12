@@ -11,7 +11,7 @@ public class IP
     public const string Anthony = "169.234.17.166";//school ip
     public const string Anthony1 = "70.187.161.177";//my other public ip's
     public const string Anthony2 = "71.94.130.204";
-    public const string Faye = "169.234.15.78";
+    public const string Faye = "169.234.29.80";
     public const string mySQL = IP.Anthony;
 }
 // State object for reading client data asynchronously
@@ -50,7 +50,7 @@ public class Game
     // A bit incomplete as I'm not sure how you guys want it
     public class Player
     {
-        public enum Status { NONE,WAITING,READY, ALIVE, DEAD }; // others to be added
+        public enum Status { NONE, WAITING, READY, ALIVE, DEAD }; // others to be added
         public Status status = Status.NONE;
         public String username;
         public int index;//--added by Anthony for lobby logic
@@ -142,7 +142,7 @@ public class Game
         //9,-9
         //-9,-9
         //-9,9
-        float x = 0; float z= 0;//filler for now
+        float x = 0; float z = 0;//filler for now
         switch (nextindex)
         {
             case 0:
@@ -245,7 +245,7 @@ public class DatabaseHandler
     {
 
     }*/
-    
+
 
     //method checks the database if the user and password are correct
     //need to update once its correct so no more than one person can long on at once
@@ -415,36 +415,53 @@ public class MessageHandler
                         cleanEOF(m);
                         continue;
                     }
+                    if (m.message == "")
+                    {
+                        allMessages.Remove(m);
+                        continue;
+                    }
 
                     // This is where you put if-statements for message contents, or calls
                     // to other soon-to-be-written-hopefully methods to keep it clean.
-                    Console.WriteLine(m.message+"\n");
+                    Console.WriteLine("Message to be parsed: " + m.message + "\n");
 
-                    if (m.message.Contains("Attempting Login: "))
+                    try
                     {
-                        attemptingLogin(m);
+
+                        if (m.message.Contains("Attempting Login: "))
+                        {
+                            attemptingLogin(m);
+                        }
+                        else if (m.message.Contains("Registering: "))//Registering: username|password<EOF>
+                        {
+                            registering(m);
+                        }
+                        else if (m.message.Contains("Awaiting Game"))//Awaiting Game username<EOF>
+                        {
+                            awaitingGame(m);
+                        }
+                        else if (m.message.Substring(0, 1) == "P") // Player just sent you a location, server-senpai!
+                        {
+                            updatePlayerLocation(m);
+                        }
+                        else if (m.message.Substring(0, 1) == "B") // Bomb proposal, be nice and approve asap
+                        {
+                            bombProposal(m);
+                        }
+                        else if (m.message.Substring(0, 5) == "ACK;B") // One more player placed the proposed bomb
+                        {
+                            bombACK(m);
+                        }
                     }
-                    else if (m.message.Contains("Registering: "))//Registering: username|password<EOF>
+                    catch (Exception e)
                     {
-                        registering(m);
+                        Console.WriteLine(e.ToString());
+                        Console.WriteLine("Message discarded without parsing: " + m.message);
                     }
-                    else if(m.message.Contains("Awaiting Game"))//Awaiting Game username<EOF>
+                    finally
                     {
-                        awaitingGame(m);
+                        allMessages.Remove(m);
                     }
-                    else if (m.message.Substring(0, 1) == "P") // Player just sent you a location, server-senpai!
-                    {
-                        updatePlayerLocation(m);
-                    }
-                    else if (m.message.Substring(0, 1) == "B") // Bomb proposal, be nice and approve asap
-                    {
-                        bombProposal(m);
-                    }
-                    else if (m.message.Substring(0, 5) == "ACK;B") // One more player placed the proposed bomb
-                    {
-                        bombACK(m);
-                    }
-                    allMessages.Remove(m);
                 }
             }
         }
@@ -633,14 +650,14 @@ public class AsynchronousSocketListener
 
     public static void lazySend(String content)
     {
-        Send(listener, content+"<EOF>");
+        Send(listener, content + "<EOF>");
         Console.WriteLine(content);
     }
 
     public static void directedsend(Socket target, string content)
     {
         Send(target, content);
-        Console.WriteLine("Message: "+content + " was sent to " + IPAddress.Parse(((IPEndPoint)listener.RemoteEndPoint).Address.ToString()));
+        Console.WriteLine("Message: " + content + " was sent to " + IPAddress.Parse(((IPEndPoint)listener.RemoteEndPoint).Address.ToString()));
     }
 
     public static int Main(String[] args)
