@@ -53,6 +53,12 @@ public class OtherPlayer
 
 public class Client : MonoBehaviour
 {
+	public GameObject player;
+	public float x;
+	public float z;
+	int TimerCount = 0;
+	int TimeSent = 0;
+	string message;
     // The port number for the remote device.
     private const int port = 11000;
     static string[] stringSeparators = new string[] { "<EOF>" };
@@ -72,7 +78,7 @@ public class Client : MonoBehaviour
 	string registerinfo = "Registering: ";
     string logininfo = "Attempting Login: ";
 	private static string myuser = "";
-	private static int myindex = -1;
+	private static int myindex = 1;
 	//need notion of being connected --Anthony
 	public static bool connected = false;
 	//public static bool inlobby = false;
@@ -94,6 +100,7 @@ public class Client : MonoBehaviour
             // The name of the remote device is "host.contoso.com".
             ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
             ipAddress = ipHostInfo.AddressList[0];
+			//ipAddress = IPAddress.Parse("169.234.20.168");
             remoteEP = new IPEndPoint(ipAddress, port);
 
             // Create a TCP/IP socket.
@@ -143,35 +150,28 @@ public class Client : MonoBehaviour
 		}
 		//check which scene im in and do a thing
 		// ------------------Anthony------------------------//
-		if(GameObject.Find ("lobby") != null)
-		{
+		if (GameObject.Find ("lobby") != null) {
 			//contact server and tell it it's in the lobby
-			lazySend("Awaiting Game " + myuser);
-		}
-		else if (GameObject.Find("reg") != null)
-		{
+			lazySend ("Awaiting Game " + myuser);
+		} else if (GameObject.Find ("reg") != null) {
 			//Debug.Log("Register page");
-			registerinfo += GameObject.Find("reg").GetComponentInChildren<register>().getsendinfo();
-			lazySend(registerinfo);
-			if(registered)
-			{
+			registerinfo += GameObject.Find ("reg").GetComponentInChildren<register> ().getsendinfo ();
+			lazySend (registerinfo);
+			if (registered) {
 				//connected = true;
-				Application.LoadLevel("Lobby");
-			}
-			else
-			{
+				Application.LoadLevel ("Lobby");
+			} else {
 				//connected = false;
-				GameObject.Find("reg").GetComponentInChildren<register>().dbg = "Register Failed";
+				GameObject.Find ("reg").GetComponentInChildren<register> ().dbg = "Register Failed";
 			}
-		}
-		else if (GameObject.Find("login") != null)
-		{
-			logininfo += GameObject.Find("login").GetComponentInChildren<login>().strsend();
-			lazySend(logininfo);
-			if(connected)
-			{
-				Application.LoadLevel("Lobby");
+		} else if (GameObject.Find ("login") != null) {
+			logininfo += GameObject.Find ("login").GetComponentInChildren<login> ().strsend ();
+			lazySend (logininfo);
+			if (connected) {
+				Application.LoadLevel ("Lobby");
 			}
+		} else if (GameObject.Find ("bullet") != null) {
+			player.GetComponent<playerMovement>().clientid = myindex;
 		}
 		//-----------Anthony--------------------//
 	}
@@ -372,7 +372,7 @@ public class Client : MonoBehaviour
 		send_so.sendDone.WaitOne();
 
 		lazyReceive();
-		recv_so.receiveDone.WaitOne(5000);
+		recv_so.receiveDone.WaitOne(10);
 		
 		// Write the response to the console.
 		//string res = recv_so.response;
@@ -388,24 +388,37 @@ public class Client : MonoBehaviour
     // Update is called once per frame
     //private int timerCount = 0;
 	//private int timesSent = 0;
+	//Jeffrey
+	//using this to send and build messages given by player object
     void FixedUpdate()
     {
-		/*
-		if(connected)//--Anthony-- trying to prevent null reference exceptions
+
+		if(connected && GameObject.Find ("bullet") != null)//--Anthony-- trying to prevent null reference exceptions
 		{
+			string alive;
 //			Debug.Log("connected");
-	        timerCount++; // simple timer for testing purposes. delete later.
-	        if (timerCount > 50)
+			if (player.activeInHierarchy){
+				alive = "T";
+			} 
+			else {
+				alive = "F";
+			}
+			string index = myindex.ToString();
+			string xs = x.ToString();
+			string zs = z.ToString();
+			message = index + ";" + alive + ";" + xs + ";" + zs + ";";
+	        TimerCount++; // simple timer for testing purposes. delete later.
+	        if (TimerCount > 5)
 	        {
-	            timerCount = 0;
+	            TimerCount = 0;
 
 	            // send test message.
-				++timesSent;
-				lazySend("Hi Server, my timer has reached 0. This is my "+ timesSent + "th time!");
-
-	            Debug.Log("Resetted "+ timesSent + "th time.");
+				++TimeSent;
+				lazySend("Hi Server, my timer has reached 0. This is my "+ TimeSent + "th time!");
+				lazySend(message);
+	            Debug.Log("Resetted "+ TimeSent + "th time.");
 	        } // END of timer implementation
-		}*/
+		}
     }
 
 	}

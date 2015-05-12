@@ -7,7 +7,7 @@ public class impact : MonoBehaviour {
 
 	void OnTriggerEnter(Collider other){
 		if (other.gameObject.tag == "Player") {
-			Destroy (other.gameObject);
+			other.gameObject.SetActive(false);
 		}
 		if (other.gameObject.tag == "Destructable") {
 			Destroy (other.gameObject);

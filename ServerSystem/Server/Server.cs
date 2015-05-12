@@ -139,7 +139,7 @@ public class DatabaseHandler
 
     public DatabaseHandler() 
     {
-        server = "127.0.0.1";
+        server = "169.234.20.168";
         db = "BombermanDB";
         serveruser = "root";
         serverpass = "master";
