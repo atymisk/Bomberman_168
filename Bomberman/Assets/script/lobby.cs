@@ -12,12 +12,12 @@ public class lobby : MonoBehaviour
 	public static bool ready = false;
 	public static bool loaded = false;
 	// Use this for initialization
-	void Start () 
+	public static void Start () //happens once and only once
 	{
-		lists[0] = "not ready";
-		lists[1] = "not ready";
-		lists[2] = "not ready";
-		lists[3] = "not ready";
+		lists[0] = "...";
+		lists[1] = "...";
+		lists[2] = "...";
+		lists[3] = "...";
 	}
 
 	//method reacts to the button press, will send a message to the server say it's ready
@@ -43,6 +43,7 @@ public class lobby : MonoBehaviour
 		ptxt[1].text = lists[1];
 		ptxt[2].text = lists[2];
 		ptxt[3].text = lists[3];
+		//Debug.Log(lists[0]);
 	}
 
 	void FixedUpdate () 

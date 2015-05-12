@@ -6,6 +6,17 @@ using System.Threading;
 using System.Collections.Generic;
 using MySql.Data.MySqlClient;
 
+public class IP
+{
+    public const string Anthony = "169.234.20.168";
+    public const string Anthony1 = "70.187.161.177";//my other public ip's
+    public const string Anthony2 = "71.94.130.204";
+    public const string Faye = "169.234.15.78";
+    public const string mySQL = IP.Anthony;
+    public const string mySQL1 = IP.Anthony1;
+    public const string mySQL2 = IP.Anthony2;
+}
+
 // State object for reading client data asynchronously
 public class StateObject
 {
@@ -44,15 +55,15 @@ public class Game
     {
         public enum Status { NONE,WAITING,READY, ALIVE, DEAD }; // others to be added
         public Status status = Status.NONE;
-        public IPAddress IP;
+        //public IPAddress IP;
         public String username;
         public int index;//--added by Anthony for lobby logic
-        //public Socket clientSocket;
+        public Socket clientSocket;
         public int x, y;
 
-        public Player(IPAddress IP, int x, int y, int index, String username)
+        public Player(Socket clientSocket, int x, int y, int index, String username)
         {
-            this.IP = IP;
+            this.clientSocket = clientSocket;
             this.x = x;
             this.y = y;
             this.index = index;
@@ -105,13 +116,14 @@ public class Game
             AsynchronousSocketListener.lazySend("P" + (i+1) + "L: " + allPlayers[i].username 
                 + "|" + allPlayers[i].x + "|" + allPlayers[i].y + "<EOF>");
         }
+        this.status = Status.LOBBY;
     }
-    public void addPlayer(IPAddress ip, string user)
+    public void addPlayer(Socket ip, string user)
     {
         //grab one of four sets of coordinates
         addPlayer(ip,-1, -1, user);//-1 for now
     }
-    public void addPlayer(IPAddress ip, int x, int y, string user)
+    public void addPlayer(Socket ip, int x, int y, string user)
     {
         if (nextindex != 4)//no more after position 3
         {
@@ -188,11 +200,15 @@ public class DatabaseHandler
         }
         return false;
     }
-    /*//don't need this yet maybe
+    
+    //method needs to update info on the user once 
     public void updateinfo(string user)
     {
         
-    }*/
+    }
+
+    //method checks the database if the user and password are correct
+    //need to update once its correct so no more than one person can long on at once
     public static bool verify(string user, string pass)
     {   
         if (OpenConnection())
@@ -311,9 +327,7 @@ public class MessageHandler
                         //game will send messages about the other players within the same lobby
                         m.message = m.message.Substring(14);
                         IPAddress.Parse(((IPEndPoint)m.client.RemoteEndPoint).Address.ToString());
-                        games[games.Count - 1].addPlayer(
-                            IPAddress.Parse(((IPEndPoint)m.client.RemoteEndPoint).Address.ToString())
-                            ,m.message.Substring(0,m.message.IndexOf("<")));
+                        games[games.Count - 1].addPlayer(m.client,m.message.Substring(0,m.message.IndexOf("<")));
                         count++;
                         if (count % 4 == 0)//reaches 4 players
                         {
@@ -361,6 +375,7 @@ public class AsynchronousSocketListener
         //Listen to external IP address
         ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
         ipAddress = ipHostInfo.AddressList[0];
+        //ipAddress = IP.mySQL;
         localEndPoint = new IPEndPoint(ipAddress, 11000);
 
         // Listen to any IP Address

@@ -129,7 +129,7 @@ public class Client : MonoBehaviour
 			
 			// Receive the response from the remote device.
             Receive(recv_so);
-            recv_so.receiveDone.WaitOne(5000);
+            recv_so.receiveDone.WaitOne(500);
             // Write the response to the console.
             Debug.Log("Response received : " + recv_so.response);
 			connected = true;
