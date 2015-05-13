@@ -84,7 +84,7 @@ public class Client : MonoBehaviour
 	public static bool connected = false;
 	//public static bool inlobby = false;
 	private static bool registered = false;
-
+	private static bool loggedin = false;
 	//Assuming that the method is Always called at the start of a scene since its not static
 	void Start()
 	{
@@ -101,7 +101,7 @@ public class Client : MonoBehaviour
             // The name of the remote device is "host.contoso.com".
             ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
             ipAddress = ipHostInfo.AddressList[0];
-			//ipAddress = IPAddress.Parse("169.234.20.168");
+			ipAddress = IPAddress.Parse("169.234.29.80");
             remoteEP = new IPEndPoint(ipAddress, port);
 
             // Create a TCP/IP socket.
@@ -141,6 +141,10 @@ public class Client : MonoBehaviour
             Debug.Log(e.ToString());
         }
     }
+	public void lobbycheck()
+	{
+
+	}
 	//use Start()?
 	public void SceneEnter()
 	{
@@ -151,10 +155,24 @@ public class Client : MonoBehaviour
 		}
 		//check which scene im in and do a thing
 		// ------------------Anthony------------------------//
-		if (GameObject.Find ("lobby") != null) 
+		if (GameObject.Find ("login") != null) 
+		{
+			logininfo += GameObject.Find ("login").GetComponentInChildren<login> ().strsend ();
+			specifiedSend(logininfo, 1500);
+			//lazySend(logininfo);
+			if (connected) 
+			{
+				//Debug.Log("login sceneenter");
+				Application.LoadLevel ("Lobby");
+			}
+		} 
+		else if (GameObject.Find ("lobby") != null) 
 		{
 			//contact server and tell it it's in the lobby
+			Debug.Log("lobby sceneenter");
 			lazySend ("Awaiting Game " + myuser);
+			
+			//Debug.Log("Client.cs lobbymsg: "+myuser);
 		} 
 		else if (GameObject.Find ("reg") != null) 
 		{
@@ -167,14 +185,6 @@ public class Client : MonoBehaviour
 			} else {
 				//connected = false;
 				GameObject.Find ("reg").GetComponentInChildren<register> ().dbg = "Register Failed";
-			}
-		} 
-		else if (GameObject.Find ("login") != null) 
-		{
-			logininfo += GameObject.Find ("login").GetComponentInChildren<login> ().strsend ();
-			lazySend (logininfo);
-			if (connected) {
-				Application.LoadLevel ("Lobby");
 			}
 		} 
 		else if (GameObject.Find ("bullet") != null) 
@@ -253,10 +263,11 @@ public class Client : MonoBehaviour
 					{
 						Debug.Log("Login Success");
 						connected = true;
-						//Debug.Log(content);
+						Debug.Log(content);
 						content = content.Substring(14);//username<EOF>
 						myuser = content.Substring(0,content.Length-5);
-						//Debug.Log("Client.cs username: "+myuser);
+						Debug.Log("Client.cs username: "+myuser);
+						loggedin = true;
 					}
 					else if (content.Contains ("Bomb;"))
 					{
@@ -282,6 +293,7 @@ public class Client : MonoBehaviour
 					//for the lobby
 					else if(content.Contains("P1L: ")||content.Contains("P2L: ")||content.Contains("P3L: ")||content.Contains("P4L: "))
 					{
+						Debug.Log("Lobby message received");
 						//Debug.Log("Line 254 "+content);
 						//Debug.Log("Line 255 "+content.Substring(1,1));
 						int ind = int.Parse(content.Substring(1,1));//get the player number from the msg
@@ -419,7 +431,7 @@ public class Client : MonoBehaviour
 		
 		// Begin sending the data to the remote device.
 		client.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallback), send_so);
-
+		Debug.Log("Sending: " + content + "<EOF>");
 		//Send(client, content+"<EOF>", send_so);
 		send_so.sendDone.WaitOne(100);
 
@@ -431,6 +443,20 @@ public class Client : MonoBehaviour
 //		Debug.Log("Response received : " + res);
 	}
 
+	public static void specifiedSend(string content,int delay)
+	{
+		// Convert the string data to byte data using ASCII encoding.
+		byte[] byteData = Encoding.ASCII.GetBytes(content+"<EOF>");
+		
+		// Begin sending the data to the remote device.
+		client.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallback), send_so);
+		Debug.Log("Sending: " + content + "<EOF>");
+		//Send(client, content+"<EOF>", send_so);
+		send_so.sendDone.WaitOne(delay);
+		
+		lazyReceive();
+		recv_so.receiveDone.WaitOne(delay);
+	}
 	//made a nonstatic wrapper for the lazysend so that other objects can use the send function
 	public void sendmsg(string content)
 	{

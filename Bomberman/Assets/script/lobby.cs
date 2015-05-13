@@ -49,7 +49,7 @@ public class lobby : MonoBehaviour
 	public static void setup(string p,int index)
 	{
 		lists[index] = p;
-		Debug.Log("Lobby Script Line 38: "+lists[index]);
+		Debug.Log("Lobby Script Line 52: "+lists[index]);
 	}
 	public void updatetxt()
 	{
