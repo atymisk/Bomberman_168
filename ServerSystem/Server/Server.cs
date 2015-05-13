@@ -73,7 +73,10 @@ public class Game
     {
         foreach (Player player in allPlayers)
         {
-            AsynchronousSocketListener.directedSend(player.clientSocket, package);
+            if (player != null)
+            {
+                AsynchronousSocketListener.directedSend(player.clientSocket, package);
+            }
         }
     }
 
@@ -214,8 +217,9 @@ public class Game
             {
                 break;
             }
-            AsynchronousSocketListener.lazySend("P" + (i + 1) + "L: " + allPlayers[i].username
-                + "|" + allPlayers[i].x + "|" + allPlayers[i].z);
+            string package = "P" + (i + 1) + "L: " + allPlayers[i].username
+                + "|" + allPlayers[i].x + "|" + allPlayers[i].z;
+            AsynchronousSocketListener.sendALL(package);
         }
     }
 
@@ -262,6 +266,7 @@ public class Game
         if (nextindex != 4)//no more after position 3
         {
             allPlayers[nextindex] = new Player(ip, x, z, nextindex, user);
+            //Console.WriteLine(user);
             nextindex++;
             lobby();//have the server send player info back to all clients
             //return nextindex - 1;//send index to the client?
@@ -367,9 +372,9 @@ public class DatabaseHandler
 
     public DatabaseHandler()
     {
-        //server = IP.mySQL;
+        server = IP.mySQL;
         //server = "169.234.20.168";
-        server = "127.0.0.1";
+        //server = "127.0.0.1";
         db = "BombermanDB";
         serveruser = "root";
         serverpass = "master";
@@ -552,6 +557,7 @@ public class MessageHandler
         //of some sort of client object with ip/socket and username
         //game will send messages about the other players within the same lobby
         m.message = m.message.Substring(14);
+        
         //IPAddress.Parse(((IPEndPoint)m.client.RemoteEndPoint).Address.ToString());
         games[games.Count - 1].addPlayer(m.client, m.message); //.Substring(0, m.message.IndexOf("<")));
         count++;
@@ -940,6 +946,14 @@ public class AsynchronousSocketListener
     {
         Send(target, content);
         Console.WriteLine("Message: " + content + " was sent to " + IPAddress.Parse(((IPEndPoint)listener.RemoteEndPoint).Address.ToString()));
+    }
+
+    public static void sendALL(string content)
+    {
+        foreach (Socket s in allClients)
+        {
+            lazySend(content);
+        }
     }
 
     public static int Main(String[] args)

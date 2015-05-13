@@ -20,3 +20,8 @@ C:\Users\Jeffrey\Desktop\Bomberman_168\ServerSystem\Server\obj\x86\Debug\Server.
 C:\Users\Jeffrey\Desktop\Bomberman_168\ServerSystem\bin\Server.exe
 C:\Users\Jeffrey\Desktop\Bomberman_168\ServerSystem\bin\Server.pdb
 C:\Users\Jeffrey\Desktop\Bomberman_168\ServerSystem\Server\obj\x86\Debug\Server.pdb
+C:\TGEDT\Desktop\Unity\UCI\ICS 168\Bomberman_168\ServerSystem\Server\obj\x86\Debug\Server.exe
+C:\TGEDT\Desktop\Unity\UCI\ICS 168\Bomberman_168\ServerSystem\bin\Server.exe
+C:\TGEDT\Desktop\Unity\UCI\ICS 168\Bomberman_168\ServerSystem\bin\Server.pdb
+C:\TGEDT\Desktop\Unity\UCI\ICS 168\Bomberman_168\ServerSystem\Server\obj\x86\Debug\Server.csprojResolveAssemblyReference.cache
+C:\TGEDT\Desktop\Unity\UCI\ICS 168\Bomberman_168\ServerSystem\Server\obj\x86\Debug\Server.pdb
