@@ -55,7 +55,7 @@ public class Client : MonoBehaviour
 {
     public float x;
     public float z;
-    static string data = "Player;0;T;0;0;0end;1;T;0;0;1end;2;T;0;0;2end;3;F;0;0;3end;";
+    static string data = "Player;0;T;-9;-9;0end;1;T;9;9;1end;2;T;-9;9;2end;3;F;9;-9;3end;";
     static string bdata = "";
 	//int TimerCount = 0;
 	//int TimeSent = 0;
@@ -81,7 +81,7 @@ public class Client : MonoBehaviour
 	string registerinfo = "Registering: ";
     string logininfo = "Attempting Login: ";
 	private static string myuser = "";
-	private static int myindex = 0;
+	private static int myindex = -1;
 	//need notion of being connected --Anthony
 	public static bool connected = false;
 	//public static bool inlobby = false;
@@ -105,7 +105,7 @@ public class Client : MonoBehaviour
             // The name of the remote device is "host.contoso.com".
             ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
             ipAddress = ipHostInfo.AddressList[0];
-			ipAddress = IPAddress.Parse("169.234.29.80");
+			ipAddress = IPAddress.Parse("169.234.17.166");
             remoteEP = new IPEndPoint(ipAddress, port);
 
             // Create a TCP/IP socket.
@@ -312,19 +312,7 @@ public class Client : MonoBehaviour
 		}
 		else if (content.Contains ("Bomb;"))
 		{
-			//Debug.Log (content);
-			int found = content.IndexOf("Bomb;");
-			content = content.Substring(found + 5);
-			found = content.IndexOf(";");
-			float x = float.Parse(content.Substring(0, found));
-			content = content.Substring(found + 1);
-			found = content.IndexOf(";");
-			float z = float.Parse(content.Substring(0, found));
-			content = content.Substring(found + 1);
-			found = content.IndexOf(";");
-			//int strength = int.Parse(content.Substring(0,found));
-			//Jeffrey can't figure this out
-			//Instantiate(bomb, new Vector3(x, .5f, z), Quaternion.identity);
+			bdata = content;
 			
 		}
 		else if (content.Contains ("Player;"))

@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class playerMovement : MonoBehaviour {
 
@@ -14,6 +15,8 @@ public class playerMovement : MonoBehaviour {
 	public bool active = false;
 	public bool alive = true;
 	string data, mydata;
+	List<string> collection;
+	int times;
 	void Start() {
 		rb = GetComponent<Rigidbody>();
 	}
@@ -34,12 +37,8 @@ public class playerMovement : MonoBehaviour {
 	void FixedUpdate () {
 
 		data = client.GetComponent<Client> ().GetData ();
-		//Debug.Log (data);
-		int found = data.IndexOf("Player;");
-		data = data.Substring(found + 7);
-		if (timer < 100) {
-			timer++;
-		}
+		Debug.Log (data);
+
 		if (playerid == clientid && alive) {
 			client.GetComponent<Client> ().x = rb.position [0];
 			client.GetComponent<Client> ().z = rb.position [2];
@@ -54,34 +53,49 @@ public class playerMovement : MonoBehaviour {
 			string xs = rb.position [0].ToString ();
 			string zs = rb.position [2].ToString ();
 			string message = "Player;" + index + ";T;" + xs + ";" + zs + ";";
-			//Debug.Log (message);
-			Client.lazySend (message);
+			Debug.Log (message);
+			times++;
+			if (times > 40) {
+				Client.lazySend (message);
+				times = 0;
+			}
 		} else if (clientid == playerid && !alive) {
 			string index = playerid.ToString ();
 			string xs = rb.position [0].ToString ();
 			string zs = rb.position [2].ToString ();
 			//Debug.Log ("Player;" + index + ";F;" + xs + ";" + zs + ";");
 			Client.lazySend ("Player;" + index + ";F;" + xs + ";" + zs + ";");
-			this.gameObject.SetActive(false);
+			this.gameObject.SetActive (false);
 		} else {
 			rb.useGravity = false;
 			//Debug.Log (data);
-			found = data.IndexOf (";" + playerid + ";") + 3;
-			int foundEnd = data.IndexOf (";" + playerid + "end;");
-			data = data.Substring(found, foundEnd-found);
-			if (data.Substring(0,1) == "F"){
-				//Debug.Log (data.Substring (0,1));
-				this.gameObject.SetActive(false);
+			collection = split (data);
+			Debug.Log (data);
+			if (playerid * 5 + 6 <= collection.Count){
+				if (collection[playerid*5 + 2] == "F") {
+					this.gameObject.SetActive (false);
+				}
+				float locx = float.Parse (collection[5*playerid + 3]);
+				float locz = float.Parse (collection[5*playerid + 4]);
+				//Debug.Log (locx);
+				//Debug.Log (locz);
+				transform.position = new Vector3 (locx, .5f, locz);
 			}
-			data = data.Substring(2);
-			found = data.IndexOf(";");
-			float locx = float.Parse(data.Substring(0, found));
-			data = data.Substring (found + 1);
-			float locz = float.Parse(data);
-			//Debug.Log (locx);
-			//Debug.Log (locz);
-			transform.position = new Vector3(locx, .5f, locz);
-
 		}
 	}
+	public List<string> split(string things)
+	{
+		List<string> message_parts = new List<string>();
+		string[] strings = things.Split(';');
+		foreach (string s in strings)//Null reference exception here
+		{
+			if (s != "")
+			{
+				message_parts.Add(s);
+			}
+		}
+		return message_parts;
+	}
 }
+
+
