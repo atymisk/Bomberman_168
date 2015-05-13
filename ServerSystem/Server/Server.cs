@@ -38,14 +38,15 @@ public class Game
     //public List<Player> allPlayers;
 
     //**need a list of possible locations for 4 players
-    public Player[] allPlayers;
+    public List<Player> allPlayers;
     public int nextindex;
     public List<Bomb> allBombs;
     private int readycount;
 
     public Game()
     {
-        allPlayers = new Player[4];//at most 4 in a single game
+        allPlayers = new List<Player>();
+        allBombs = new List<Bomb>();
         nextindex = 0;//starting position, when one player is added: next position is 1
         readycount = 0;
     }
@@ -54,7 +55,7 @@ public class Game
     public void GameLoop()
     {
         int timer = 0;
-        int maxTimerValue = 100; // change this value
+        int maxTimerValue = 40; // change this value
         // Continue looping until game ends and a winner is determined.
         while (status != Status.ENDED)
         {
@@ -71,13 +72,14 @@ public class Game
 
     private void sendToAll(string package)
     {
-        foreach (Player player in allPlayers)
+        AsynchronousSocketListener.sendALL(package);
+        /*foreach (Player player in allPlayers)
         {
             if (player != null)
             {
                 AsynchronousSocketListener.directedSend(player.clientSocket, package);
             }
-        }
+        }*/
     }
 
     private void sendPosition() // Player;0;T;9;8;0end;1;T;8;9;1end;2;T;9;7;2end;3;F;9;6;3end;
@@ -86,7 +88,9 @@ public class Game
         for (int i = 0; i < getplayerCount(); i++)
         {
             string header = i.ToString() + MessageHandler.semicolon;
-            string deadOrAlive = allPlayers[i].isDead().ToString().ToUpper()[0].ToString() + MessageHandler.semicolon; ;
+            bool isAlive = !(allPlayers[i].isDead());
+            string trueFalse = isAlive.ToString();
+            string deadOrAlive = trueFalse[0].ToString() + MessageHandler.semicolon;
             string x = allPlayers[i].x.ToString() + MessageHandler.semicolon;
             string z = allPlayers[i].z.ToString() + MessageHandler.semicolon;
             string footer = i.ToString() + "end" + MessageHandler.semicolon;
@@ -134,6 +138,7 @@ public class Game
             this.z = z;
             this.index = index;
             this.username = username;
+            this.status = Status.ALIVE;
         }
         public void alive()
         {
@@ -210,7 +215,7 @@ public class Game
 
     public void lobby()//whenever theres anyone
     {
-        for (int i = 0; i < allPlayers.Length; i++)
+        for (int i = 0; i < getplayerCount(); i++)
         {
             //send to all
             if (allPlayers[i] == null)
@@ -265,7 +270,7 @@ public class Game
     {
         if (nextindex != 4)//no more after position 3
         {
-            allPlayers[nextindex] = new Player(ip, x, z, nextindex, user);
+            allPlayers.Add(new Player(ip, x, z, nextindex, user));
             //Console.WriteLine(user);
             nextindex++;
             lobby();//have the server send player info back to all clients
@@ -275,7 +280,7 @@ public class Game
 
     public int getplayerCount()
     {
-        return allPlayers.Length;// allPlayers.Count;
+        return allPlayers.Count;// allPlayers.Count;
     }
 
     public void playerready(int index)
@@ -283,7 +288,7 @@ public class Game
         getPlayer(index).ready();
         readycount++;
         //send message to all players of who's ready
-        for (int i = 0; i < allPlayers.Length && allPlayers[i] != null; i++)
+        for (int i = 0; i < getplayerCount() && allPlayers[i] != null; i++)
         {
             AsynchronousSocketListener.lazySend("P" + (i + 1) + "R: ready");
         }
@@ -293,14 +298,14 @@ public class Game
     {
         getPlayer(index).inLobby();
         readycount = (readycount == 0 ? 0 : readycount-1) ;
-        for (int i = 0; i < allPlayers.Length && allPlayers[i] != null; i++)
+        for (int i = 0; i < getplayerCount() && allPlayers[i] != null; i++)
         {
             AsynchronousSocketListener.lazySend("P" + (i + 1) + "R: not ready");
         }
     }
     public void checkready()
     {
-        if (readycount >= 2 && readycount == allPlayers.Length)
+        if (readycount >= 2 && readycount == getplayerCount())
         {
             //start countdown??
             Console.WriteLine("Game Starting...");
@@ -477,12 +482,13 @@ public class MessageHandler
         {
             this.client = client;
             this.message = message;
+            this.messageParts = new List<string>();
         }
 
         public List<string> split()
         {
             string[] strings = message.Split(semicolon);
-            foreach (string s in messageParts)//Null reference exception here
+            foreach (string s in strings)//Null reference exception here
             {
                 if (s != "")
                 {
@@ -567,7 +573,7 @@ public class MessageHandler
             count = 0;
         }
     }
-
+    static bool started = false; // DELETE
     private static void updatePlayerLocation(Message m) // for player location: Player;index;T/F;x;z;
     {
         try
@@ -602,6 +608,8 @@ public class MessageHandler
         {
             return;
         }
+        if (started == false) // DELETE
+        { games[0].GameLoop(); started = true; }
     }
 
     private static void bombProposal(Message m) // for bomb proposal: Bomb;x;z;strength;
@@ -671,14 +679,14 @@ public class MessageHandler
                 // Parse the first message that does not include an EOF tag.
                 // If all messages have EOF tag, clean it.
                 Message m = allMessages[0];
-                foreach (Message message in allMessages)
+                /*foreach (Message message in allMessages)
                 {
                     if ((message.message != "") && (!message.message.Contains("<EOF>")))
                     {
                         m = message;
                         break;
                     }
-                }
+                }*/
 
                 if (m != null)
                 {
@@ -723,11 +731,11 @@ public class MessageHandler
                         {
                             m.split();//Null reference exception
 
-                            if (m.message.Substring(0, 1) == "P") // Player just sent you a location, server-senpai!
+                            if (m.messageParts[0] == "Player") // Player just sent you a location, server-senpai!
                             {
                                 updatePlayerLocation(m);
                             }
-                            else if (m.message.Substring(0, 1) == "B") // Bomb proposal, be nice and approve asap
+                            else if (m.messageParts[0] == "Bomb") // Bomb proposal, be nice and approve asap
                             {
                                 bombProposal(m);
                             }
@@ -952,6 +960,14 @@ public class AsynchronousSocketListener
     {
         foreach (Socket s in allClients)
         {
+            /*Console.WriteLine("Sending to a Client:");
+            IPAddress IP = IPAddress.Parse(((IPEndPoint)s.RemoteEndPoint).Address.ToString());
+            IPAddress IPl = IPAddress.Parse(((IPEndPoint)s.LocalEndPoint).Address.ToString());
+            IPAddress IP2 = IPAddress.Parse(((IPEndPoint)listener.RemoteEndPoint).Address.ToString());
+            IPAddress IP2l = IPAddress.Parse(((IPEndPoint)listener.LocalEndPoint).Address.ToString());
+            Console.WriteLine("REMOTE\nIP: " + IP + "\nListener: " + IP2);
+            Console.WriteLine("LOCAL\nIP: " + IPl + "\nListener: " + IP2l);
+            Console.WriteLine();*/
             lazySend(content);
         }
     }
