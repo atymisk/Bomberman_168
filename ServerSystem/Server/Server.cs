@@ -56,7 +56,7 @@ public class Game
         int timer = 0;
         int maxTimerValue = 100; // change this value
         // Continue looping until game ends and a winner is determined.
-        while (true)
+        while (status != Status.ENDED)
         {
             if (++timer != maxTimerValue)
             {
@@ -66,7 +66,14 @@ public class Game
 
             sendPosition();
             sendBombs();
+        }
+    }
 
+    private void sendToAll(string package)
+    {
+        foreach (Player player in allPlayers)
+        {
+            AsynchronousSocketListener.directedSend(player.clientSocket, package);
         }
     }
 
@@ -82,10 +89,7 @@ public class Game
             string footer = i.ToString() + "end" + MessageHandler.semicolon;
             package += header + deadOrAlive + x + z + footer;
         }
-        foreach (Player player in allPlayers)
-        {
-            AsynchronousSocketListener.directedSend(player.clientSocket, package);
-        }
+        sendToAll(package);
     }
 
     // If there are still bombs in the list, send them out and delete.
@@ -103,10 +107,7 @@ public class Game
 
                 string package = header + x + z + strength;
 
-                foreach (Player player in allPlayers)
-                {
-                    AsynchronousSocketListener.directedSend(allPlayers[i].clientSocket, package);
-                }
+                sendToAll(package);
             }
             allBombs.Remove(bomb);
         }
@@ -283,13 +284,16 @@ public class Game
         }
         checkready();
     }
+
     public void checkready()
     {
         if (readycount >= 2 && readycount == allPlayers.Length)
         {
             //start countdown??
             Console.WriteLine("Game Starting...");
+            GameLoop();
             //after countdown
+            Console.WriteLine("Game has ended...????");
         }
     }
 
@@ -304,6 +308,17 @@ public class Game
         }
         Console.WriteLine("Your Player object cannot be found. So here is a null.");
         return null;
+    }
+
+    public void sendGameOver(int winner)
+    {
+        string package = "Game Over;";
+        if (winner != -1)
+        {
+            package += (winner.ToString() + MessageHandler.semicolon);
+        }
+        sendToAll(package);
+        status = Status.ENDED;
     }
 
     public void checkGameStatus()
@@ -323,9 +338,11 @@ public class Game
         {
             case 1: // we have a winner. not sure who it is though.
                 Console.WriteLine("Player " + (winner + 1) + " won!");
+                sendGameOver(winner);
                 break;
             case 0: // everybody died lulz
                 Console.WriteLine("Everybody died! Oh noes!");
+                sendGameOver(-1);
                 break;
             default: break;
         }
@@ -559,6 +576,7 @@ public class MessageHandler
                     break;
                 case "F":
                     player.dead();
+                    game.checkGameStatus();
                     break;
                 default: return;
             }
