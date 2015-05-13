@@ -53,12 +53,12 @@ public class OtherPlayer
 
 public class Client : MonoBehaviour
 {
-	public GameObject bomb;
-	public float x;
-	public float z;
-	static string data = "Player;0;T;9;8;0end;1;T;8;9;1end;2;T;9;7;2end;3;F;9;5;3end;<EOF>";
-	int TimerCount = 0;
-	int TimeSent = 0;
+    public float x;
+    public float z;
+    static string data = "Player;0;T;0;0;0end;1;T;0;0;1end;2;T;0;0;2end;3;F;0;0;3end;";
+    static string bdata = "";
+	//int TimerCount = 0;
+	//int TimeSent = 0;
 	string message;
     // The port number for the remote device.
     private const int port = 11000;
@@ -187,10 +187,7 @@ public class Client : MonoBehaviour
 				GameObject.Find ("reg").GetComponentInChildren<register> ().dbg = "Register Failed";
 			}
 		} 
-		else if (GameObject.Find ("bullet") != null) 
-		{
-			//player.GetComponent<playerMovement>().clientid = myindex;
-		}
+
 		//-----------Anthony--------------------//
 	}
 
@@ -259,7 +256,11 @@ public class Client : MonoBehaviour
 				{
 					//--Anthony--added these various if's
 
-					if(content.Contains("Login Success"))//Login Success test<EOF>
+                    if (content.Contains("Bomb;"))
+                    {
+                        bdata = content;
+                    }
+					else if(content.Contains("Login Success"))//Login Success test<EOF>
 					{
 						Debug.Log("Login Success");
 						connected = true;
@@ -431,7 +432,7 @@ public class Client : MonoBehaviour
 		
 		// Begin sending the data to the remote device.
 		client.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallback), send_so);
-		Debug.Log("Sending: " + content + "<EOF>");
+		//Debug.Log("Sending: " + content + "<EOF>");
 		//Send(client, content+"<EOF>", send_so);
 		send_so.sendDone.WaitOne(100);
 
@@ -502,4 +503,12 @@ public class Client : MonoBehaviour
 	public string GetData(){
 		return data;
 	}
+    public string GetBdata()
+    {
+        return bdata;
+    }
+    public void deleteBData()
+    {
+        bdata = "";
+    }
 }

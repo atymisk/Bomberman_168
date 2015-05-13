@@ -38,8 +38,6 @@ public class bombLogic : MonoBehaviour {
 				Destroy (bullet4.gameObject);
 
 				active = false;
-				var theScript = player.GetComponent<playerMovement>();
-				theScript.active = false;
 				Destroy (this.gameObject);
 
 				

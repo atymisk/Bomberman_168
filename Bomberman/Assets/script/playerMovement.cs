@@ -2,7 +2,7 @@
 using System.Collections;
 
 public class playerMovement : MonoBehaviour {
-	
+
 	public float speed;
 	public Rigidbody rb, bomb, clone;
 	public Vector3 movement;
@@ -17,9 +17,9 @@ public class playerMovement : MonoBehaviour {
 	void Start() {
 		rb = GetComponent<Rigidbody>();
 	}
-	
+
 	void Update() {
-		
+
 		if (Input.GetButtonDown("Fire1") && !active && playerid == clientid && timer >= dropTime) {
 			timer -= dropTime;
 			Client.lazySend("Bomb;" + rb.position[0].ToString() + ";" + rb.position[2].ToString() + ";" + strength.ToString() + ";");
@@ -32,9 +32,9 @@ public class playerMovement : MonoBehaviour {
 	}
 	
 	void FixedUpdate () {
-		
+
 		data = client.GetComponent<Client> ().GetData ();
-		Debug.Log (data);
+		//Debug.Log (data);
 		int found = data.IndexOf("Player;");
 		data = data.Substring(found + 7);
 		if (timer < 100) {
@@ -45,11 +45,11 @@ public class playerMovement : MonoBehaviour {
 			client.GetComponent<Client> ().z = rb.position [2];
 			float moveHorizontal = Input.GetAxis ("Horizontal");
 			float moveVertical = Input.GetAxis ("Vertical");
-			
+
 			movement = new Vector3 (moveHorizontal, 0.0f, moveVertical);
-			
+
 			rb.AddForce (movement * speed);
-			
+
 			string index = playerid.ToString ();
 			string xs = rb.position [0].ToString ();
 			string zs = rb.position [2].ToString ();
@@ -81,7 +81,7 @@ public class playerMovement : MonoBehaviour {
 			//Debug.Log (locx);
 			//Debug.Log (locz);
 			transform.position = new Vector3(locx, .5f, locz);
-			
+
 		}
 	}
 }
