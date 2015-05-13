@@ -284,7 +284,10 @@ public class Game
     {
         return allPlayers.Count;// allPlayers.Count;
     }
-
+    public void refresh()
+    {
+        lobby();
+    }
     public void playerready(int index)
     {
         getPlayer(index).ready();
@@ -310,7 +313,7 @@ public class Game
         if (readycount >= 2 && readycount == getplayerCount())
         {
             //start countdown??
-            Console.WriteLine("\nGame Starting...\n");
+            Console.WriteLine("\n-----------------------Game Starting----------------------------\n");
             AsynchronousSocketListener.sendALL("Game Start");
             //Clear the msg buffer/queue
             MessageHandler.clearmessages();
@@ -318,6 +321,17 @@ public class Game
             //after countdown
             //Console.WriteLine("Game has ended...????");
         }
+    }
+    public bool playerExists(string user)
+    {
+        for (int i = 0; i < allPlayers.Count && allPlayers[i] != null; i++)
+        {
+            if (allPlayers[i].username == user)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     public Player findPlayer(Socket client)
@@ -360,6 +374,7 @@ public class Game
         switch (numOfPlayers)
         {
             case 1: // we have a winner. not sure who it is though.
+                Console.WriteLine("------------------------Game Over!----------------------------");
                 Console.WriteLine("Player " + (winner + 1) + " won!");
                 sendGameOver(winner);
                 break;
@@ -576,7 +591,10 @@ public class MessageHandler
         //of some sort of client object with ip/socket and username
         //game will send messages about the other players within the same lobby
         m.message = m.message.Substring(14);
-        
+        if (games[games.Count - 1].playerExists(m.message))
+        {
+            games[games.Count - 1].refresh();
+        }
         //IPAddress.Parse(((IPEndPoint)m.client.RemoteEndPoint).Address.ToString());
         games[games.Count - 1].addPlayer(m.client, m.message); //.Substring(0, m.message.IndexOf("<")));
         count++;

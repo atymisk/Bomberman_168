@@ -88,6 +88,7 @@ public class Client : MonoBehaviour
 	private static bool registered = false;
 	private static bool loggedin = false;
 	private static bool gamestart = false;
+	private static bool gameover = false;
 	private static List<string> msgbuffer = new List<string>();
 	//Assuming that the method is Always called at the start of a scene since its not static
 	void Start()
@@ -322,6 +323,10 @@ public class Client : MonoBehaviour
 		{
 			data = content;
 		}
+		else if (content.Contains("Game Over;"))
+		{
+			gameover = true;
+		}
 		else if(content == "Game Start")
 		{
 			//Application.LoadLevel("MultiBomberman");
@@ -490,6 +495,11 @@ public class Client : MonoBehaviour
 		{
 			gamestart = false;
 			Application.LoadLevel("Bomberman");//<-----Whatever scene that needs to be loaded
+		}
+		if(gameover)
+		{
+			gameover = !gameover;
+			Application.LoadLevel("Lobby");
 		}
 		if(connected && GameObject.Find ("bullet") != null)//--Anthony-- trying to prevent null reference exceptions
 		{
