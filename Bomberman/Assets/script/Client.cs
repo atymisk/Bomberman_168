@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
-
+using System.Collections.Generic;
 using System;
 using System.Net;
 using System.Net.Sockets;
@@ -67,6 +67,8 @@ public class Client : MonoBehaviour
 	//71.94.130.204
 	//70.187.161.177
 
+	private static string[] EOF = new string[]{"<EOF>"};
+
 	private static Socket client;
 	private static IPEndPoint remoteEP;
 	private static IPHostEntry ipHostInfo;
@@ -85,6 +87,8 @@ public class Client : MonoBehaviour
 	//public static bool inlobby = false;
 	private static bool registered = false;
 	private static bool loggedin = false;
+
+	private static List<string> msgbuffer = new List<string>();
 	//Assuming that the method is Always called at the start of a scene since its not static
 	void Start()
 	{
@@ -141,10 +145,7 @@ public class Client : MonoBehaviour
             Debug.Log(e.ToString());
         }
     }
-	public void lobbycheck()
-	{
 
-	}
 	//use Start()?
 	public void SceneEnter()
 	{
@@ -254,103 +255,11 @@ public class Client : MonoBehaviour
 				String content = state.sb.ToString();
 				if (content.IndexOf("<EOF>") > -1)
 				{
-					//--Anthony--added these various if's
 
-                    if (content.Contains("Bomb;"))
-                    {
-                        bdata = content;
-                    }
-					else if(content.Contains("Login Success"))//Login Success test<EOF>
-					{
-						Debug.Log("Login Success");
-						connected = true;
-						Debug.Log(content);
-						content = content.Substring(14);//username<EOF>
-						myuser = content.Substring(0,content.Length-5);
-						Debug.Log("Client.cs username: "+myuser);
-						loggedin = true;
-					}
-					else if (content.Contains ("Bomb;"))
-					{
-						//Debug.Log (content);
-						int found = content.IndexOf("Bomb;");
-						content = content.Substring(found + 5);
-						found = content.IndexOf(";");
-						float x = float.Parse(content.Substring(0, found));
-						content = content.Substring(found + 1);
-						found = content.IndexOf(";");
-						float z = float.Parse(content.Substring(0, found));
-						content = content.Substring(found + 1);
-						found = content.IndexOf(";");
-						//int strength = int.Parse(content.Substring(0,found));
-						//Jeffrey can't figure this out
-						//Instantiate(bomb, new Vector3(x, .5f, z), Quaternion.identity);
-						
-					}
-					else if (content.Contains ("Player;"))
-					{
-						data = content;
-					}
-					//for the lobby
-					else if(content.Contains("P1L: ")||content.Contains("P2L: ")||content.Contains("P3L: ")||content.Contains("P4L: "))
-					{
-						Debug.Log("Lobby message received");
-						//Debug.Log("Line 254 "+content);
-						//Debug.Log("Line 255 "+content.Substring(1,1));
-						int ind = int.Parse(content.Substring(1,1));//get the player number from the msg
-						//Debug.Log(ind);
-					  	ind--;
-					  	string msg = content.Substring(5);//username|x|y<EOF>
-					  	int index = msg.IndexOf("|");
-					  	string user = msg.Substring(0,index);
-						//Debug.Log("Line 262: "+user);
-					 	msg = msg.Substring(index+1);//x|y<EOF>
-					 	index = msg.IndexOf("|");
-					 	int x = int.Parse (msg.Substring(0,index));
-
-					  	msg = msg.Substring(index+1);//y<EOF>
-					  	index = msg.IndexOf("<");
-					  	int y = int.Parse(msg.Substring(0,index));
-					  	
-					  	otherplayers[ind] = new OtherPlayer(user,x,y);
-					  	if(user == myuser)//if this message happens to contain the client's info
-					  	{
-					  		myindex = ind;
-					  	}
-					 	lobby.setup(user,ind);
-					}
-					else if(content.Contains("P1R: ready")||content.Contains("P2R: ready")||content.Contains("P3R: ready")||content.Contains("P4R: ready"))
-					{
-						int ind = int.Parse(content.Substring(1,1));//get the player number from the msg
-						ind--;
-						lobby.readyupdates(ind);
-					}
-					else if(content.Contains("P1R: not")||content.Contains("P2R: not")||content.Contains("P3R: not")||content.Contains("P4R: not"))
-					{
-						Debug.Log("Client.cs not ready");
-						int ind = int.Parse(content.Substring(1,1));//get the player number from the msg
-						ind--;
-						lobby.notreadyupdate(ind);
-					}
-					else if(content == "Login Failed<EOF>")
-					{
-						Debug.Log("Login Failed");
-						connected = false;
-					}
-					else if(content.Contains("Registered"))
-					{
-						Debug.Log("Registering successful");
-						registered = true;
-						myuser = content.Substring(11,content.IndexOf("<"));
-					}
-					else if(content == "Invalid Registry<EOF>")
-					{
-						Debug.Log("Registering failed");
-						registered = false;
-						connected = false;
-					}
 					state.sb = new StringBuilder("");
-					
+
+					Debug.Log("Received: \t"+content);
+					cleanEOF(content);
 					// Setup a new state object and do a receive callback relay.
 					StateObject newstate = new StateObject();
 					newstate.workSocket = client;
@@ -373,6 +282,114 @@ public class Client : MonoBehaviour
             Debug.Log(e.ToString());
         }
     }
+	public static void cleanEOF(string content)
+	{
+		//clean and put into buffer
+		string[] messages = content.Split(EOF,StringSplitOptions.None);//EOF taken out
+		if(messages.Length > 0)
+		{
+			foreach(string m in messages)
+			{
+				parseMessages(m);
+			}
+		}
+		//parseMessages();
+	}
+	public static void parseMessages(string content)
+	{
+		//--Anthony--added these various if's
+		//Debug.Log(content);
+		Debug.Log("Parsing "+content);
+		if(content.Contains("Login Success"))//Login Success test<EOF>
+		{
+			Debug.Log("Login Success");
+			connected = true;
+			//Debug.Log(content);
+			content = content.Substring(14);//username<EOF>
+			myuser = content.Substring(0);
+			//Debug.Log("Client.cs username: "+myuser);
+			loggedin = true;
+		}
+		else if (content.Contains ("Bomb;"))
+		{
+			//Debug.Log (content);
+			int found = content.IndexOf("Bomb;");
+			content = content.Substring(found + 5);
+			found = content.IndexOf(";");
+			float x = float.Parse(content.Substring(0, found));
+			content = content.Substring(found + 1);
+			found = content.IndexOf(";");
+			float z = float.Parse(content.Substring(0, found));
+			content = content.Substring(found + 1);
+			found = content.IndexOf(";");
+			//int strength = int.Parse(content.Substring(0,found));
+			//Jeffrey can't figure this out
+			//Instantiate(bomb, new Vector3(x, .5f, z), Quaternion.identity);
+			
+		}
+		else if (content.Contains ("Player;"))
+		{
+			data = content;
+		}
+		//for the lobby
+		else if(content.Contains("P2L: ")||content.Contains("P1L: ")||content.Contains("P3L: ")||content.Contains("P4L: "))
+		{
+			
+			//Debug.Log("Line 254 "+content);
+			//Debug.Log("Line 255 "+content.Substring(1,1));
+			int ind = int.Parse(content.Substring(1,1));//get the player number from the msg
+			//Debug.Log(ind);
+			ind--;
+			string msg = content.Substring(5);//username|x|y<EOF>
+			int index = msg.IndexOf("|");
+			string user = msg.Substring(0,index);
+			//Debug.Log("Line 262: "+user);
+			msg = msg.Substring(index+1);//x|y<EOF>
+			index = msg.IndexOf("|");
+			int x = int.Parse (msg.Substring(0,index));
+			
+			msg = msg.Substring(index+1);//y<EOF>
+			//index = msg.IndexOf("<");
+			int y = int.Parse(msg.Substring(0));
+			
+			otherplayers[ind] = new OtherPlayer(user,x,y);
+			if(user == myuser)//if this message happens to contain the client's info
+			{
+				myindex = ind;
+			}
+			lobby.setup(user,ind);
+		}
+		else if(content.Contains("P1R: ready")||content.Contains("P2R: ready")||content.Contains("P3R: ready")||content.Contains("P4R: ready"))
+		{
+			int ind = int.Parse(content.Substring(1,1));//get the player number from the msg
+			ind--;
+			lobby.readyupdates(ind);
+		}
+		else if(content.Contains("P1R: not")||content.Contains("P2R: not")||content.Contains("P3R: not")||content.Contains("P4R: not"))
+		{
+			Debug.Log("Client.cs not ready");
+			int ind = int.Parse(content.Substring(1,1));//get the player number from the msg
+			ind--;
+			lobby.notreadyupdate(ind);
+		}
+		else if(content == "Login Failed<EOF>")
+		{
+			Debug.Log("Login Failed");
+			connected = false;
+		}
+		else if(content.Contains("Registered"))
+		{
+			Debug.Log("Registering successful");
+			registered = true;
+			myuser = content.Substring(11);
+		}
+		else if(content == "Invalid Registry<EOF>")
+		{
+			Debug.Log("Registering failed");
+			registered = false;
+			connected = false;
+		}
+	}
 	public static string getUser()
 	{
 		return myuser;
