@@ -18,4 +18,8 @@ public class login : MonoBehaviour {
 		//Debug.Log(tosend);
 		return tosend;
 	}
+	public void wipe()
+	{
+		tosend = "";
+	}
 }

@@ -225,6 +225,7 @@ public class Game
             string package = "P" + (i + 1) + "L: " + allPlayers[i].username
                 + "|" + allPlayers[i].x + "|" + allPlayers[i].z;
             AsynchronousSocketListener.sendALL(package);
+            //sendToAll(package);
         }
     }
 
@@ -290,7 +291,7 @@ public class Game
         //send message to all players of who's ready
         for (int i = 0; i < getplayerCount() && allPlayers[i] != null; i++)
         {
-            AsynchronousSocketListener.lazySend("P" + (i + 1) + "R: ready");
+            AsynchronousSocketListener.Send(getPlayer(index).clientSocket,"P" + (i + 1) + "R: ready");
         }
         checkready();
     }
@@ -300,7 +301,7 @@ public class Game
         readycount = (readycount == 0 ? 0 : readycount-1) ;
         for (int i = 0; i < getplayerCount() && allPlayers[i] != null; i++)
         {
-            AsynchronousSocketListener.lazySend("P" + (i + 1) + "R: not ready");
+            AsynchronousSocketListener.Send(getPlayer(index).clientSocket,"P" + (i + 1) + "R: not ready");
         }
     }
     public void checkready()
@@ -524,12 +525,12 @@ public class MessageHandler
         //check the database with the user and pass
         if (DatabaseHandler.verify(user, pass))
         {
-            AsynchronousSocketListener.lazySend("Login Success " + user);
+            AsynchronousSocketListener.Send(m.client,"Login Success " + user);
             //add player object here?
         }
         else
         {
-            AsynchronousSocketListener.lazySend("Login Failed");
+            AsynchronousSocketListener.Send(m.client,"Login Failed");
         }
         //AsynchronousSocketListener.lazySend("Login Success<EOF>");
     }
@@ -546,12 +547,12 @@ public class MessageHandler
         Console.WriteLine(user + "\n" + pass);
         if (DatabaseHandler.adduser(user, pass))
         {
-            AsynchronousSocketListener.lazySend("Registered " + user);
+            AsynchronousSocketListener.Send(m.client,"Registered " + user);
             //add player object here?
         }
         else
         {
-            AsynchronousSocketListener.lazySend("Invalid Registery");
+            AsynchronousSocketListener.Send(m.client,"Invalid Registery");
         }
     }
 
@@ -770,7 +771,6 @@ public class AsynchronousSocketListener
     // a Dictionary<[IP address], [Sockets]> later on.
     public static List<Socket> allClients = new List<Socket>();
 
-    private static Socket listener;
     private static IPHostEntry ipHostInfo;
     private static IPAddress ipAddress;
     private static IPEndPoint localEndPoint;
@@ -787,17 +787,17 @@ public class AsynchronousSocketListener
     {
         // Data buffer for incoming data.
         byte[] bytes = new Byte[1024];
-
+        
         // Create a TCP/IP socket.
-        listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        Socket listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);//SERVER socket?
 
         //Listen to external IP address
         ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
         ipAddress = ipHostInfo.AddressList[0];
-        localEndPoint = new IPEndPoint(ipAddress, 11000);
+        localEndPoint = new IPEndPoint(ipAddress, 11000);//listen at this specific point
 
         // Listen to any IP Address
-        anyEndPoint = new IPEndPoint(IPAddress.Any, 11000);
+        anyEndPoint = new IPEndPoint(IPAddress.Any, 11000);//listen for ANY REMOTE device
 
         //setup a game, one at the beginning
         //allGames.Add(new Game());
@@ -806,7 +806,7 @@ public class AsynchronousSocketListener
         try
         {
             listener.Bind(anyEndPoint);
-            listener.Listen(100);
+            listener.Listen(100);//100 connections max
 
             while (true)
             {
@@ -840,9 +840,17 @@ public class AsynchronousSocketListener
         // Signal the main thread to continue.
         allDone.Set();
 
-        // Get the socket that handles the client request.
+        // Get the socket that handles the client request. <---HANDLES the client
         Socket listener = (Socket)ar.AsyncState;
-        Socket handler = listener.EndAccept(ar);
+        Socket handler = listener.EndAccept(ar); //<---THIS is the CLIENT socket
+
+        /*IPAddress IP = IPAddress.Parse(((IPEndPoint)listener.RemoteEndPoint).Address.ToString());
+                IPAddress IP2 = IPAddress.Parse(((IPEndPoint)listener.LocalEndPoint).Address.ToString());
+                Console.WriteLine("\nRemoteIP: " + IP + ", LocalIP: " + IP2 + "\n");*/
+        
+        /*
+        Console.WriteLine("\nHandlerRemote): " + IPAddress.Parse(((IPEndPoint)handler.RemoteEndPoint).Address.ToString()));
+        Console.WriteLine("Handler(Local): " + IPAddress.Parse(((IPEndPoint)handler.LocalEndPoint).Address.ToString()) + "\n");*/
 
         // Create the state object.
         StateObject state = new StateObject();
@@ -866,7 +874,7 @@ public class AsynchronousSocketListener
 
         // Retrieve the state object and the handler socket from the asynchronous state object.
         StateObject state = (StateObject)ar.AsyncState;
-        listener = state.workSocket;
+        Socket listener = state.workSocket;
 
         // Read data from the client socket.
         int bytesRead = listener.EndReceive(ar);
@@ -882,9 +890,6 @@ public class AsynchronousSocketListener
             {
                 // All the data has been read from the client, add into the message processing list.
                 Console.WriteLine("Read {0} bytes from socket." /*\n Data : {1}"*/, content.Length, content);
-                /*IPAddress IP = IPAddress.Parse(((IPEndPoint)listener.RemoteEndPoint).Address.ToString());
-                IPAddress IP2 = IPAddress.Parse(((IPEndPoint)listener.LocalEndPoint).Address.ToString());
-                Console.WriteLine("\nRemoteIP: " + IP + ", LocalIP: " + IP2 + "\n");*/
 
                 // I haven't figured out how to retrieve the IP yet, so it's "content, content" for now.
                 // It should be "IP, content" later. #HalpIsNeeded.
@@ -892,7 +897,8 @@ public class AsynchronousSocketListener
                 //Console.WriteLine("Message Received: " + content);
 
                 MessageHandler.addMessage(listener, content);
-
+                Console.WriteLine("\nListener(Remote): " + IPAddress.Parse(((IPEndPoint)listener.RemoteEndPoint).Address.ToString()));
+                Console.WriteLine("Listener(Local): " + IPAddress.Parse(((IPEndPoint)listener.LocalEndPoint).Address.ToString()) + "\n");
                 //Console.WriteLine("\n\n");
                 //** Echo the data back to the client.**
                 // (Probably not necessary, but play around with it.)
@@ -916,13 +922,14 @@ public class AsynchronousSocketListener
     }
 
     // Self-explanatory. Send message. Although this is more of a helper function.
-    private static void Send(Socket handler, String data)
+    public static void Send(Socket handler, String data)
     {
+        data += "<EOF>";
         // Convert the string data to byte data using ASCII encoding.
         byte[] byteData = Encoding.ASCII.GetBytes(data);
 
         // This call is the crucial moment...
-        // Begin sending the data to the remote device.
+        // Begin sending the data to the remote device. <---------------------TO the REMOTE device
         handler.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallback), handler);
     }
 
@@ -932,7 +939,11 @@ public class AsynchronousSocketListener
         try
         {
             // Retrieve the socket from the state object.
-            Socket handler = (Socket)ar.AsyncState;
+            Socket handler = (Socket)ar.AsyncState;//<----Client Socket
+       
+            /*IPAddress IP = IPAddress.Parse(((IPEndPoint)listener.RemoteEndPoint).Address.ToString());
+                IPAddress IP2 = IPAddress.Parse(((IPEndPoint)listener.LocalEndPoint).Address.ToString());
+                Console.WriteLine("\nRemoteIP: " + IP + ", LocalIP: " + IP2 + "\n");*/
 
             // Complete sending the data to the remote device.
             int bytesSent = handler.EndSend(ar);
@@ -943,32 +954,24 @@ public class AsynchronousSocketListener
             Console.WriteLine(e.ToString());
         }
     }
-
+    /*
     public static void lazySend(String content)
     {
         Send(listener, content + "<EOF>");
         Console.WriteLine("Sending: " + content + "<EOF>");
-    }
+    }*/
 
     public static void directedSend(Socket target, string content)
     {
         Send(target, content);
-        Console.WriteLine("Message: " + content + " was sent to " + IPAddress.Parse(((IPEndPoint)listener.RemoteEndPoint).Address.ToString()));
+        Console.WriteLine("Message: " + content + " was sent to " + IPAddress.Parse(((IPEndPoint)target.RemoteEndPoint).Address.ToString()));
     }
 
     public static void sendALL(string content)
     {
         foreach (Socket s in allClients)
         {
-            /*Console.WriteLine("Sending to a Client:");
-            IPAddress IP = IPAddress.Parse(((IPEndPoint)s.RemoteEndPoint).Address.ToString());
-            IPAddress IPl = IPAddress.Parse(((IPEndPoint)s.LocalEndPoint).Address.ToString());
-            IPAddress IP2 = IPAddress.Parse(((IPEndPoint)listener.RemoteEndPoint).Address.ToString());
-            IPAddress IP2l = IPAddress.Parse(((IPEndPoint)listener.LocalEndPoint).Address.ToString());
-            Console.WriteLine("REMOTE\nIP: " + IP + "\nListener: " + IP2);
-            Console.WriteLine("LOCAL\nIP: " + IPl + "\nListener: " + IP2l);
-            Console.WriteLine();*/
-            lazySend(content);
+            directedSend(s,content);//<----s.RemoteEndPoint is correct, but goes nowhere
         }
     }
 

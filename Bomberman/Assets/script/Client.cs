@@ -255,7 +255,6 @@ public class Client : MonoBehaviour
 				String content = state.sb.ToString();
 				if (content.IndexOf("<EOF>") > -1)
 				{
-
 					state.sb = new StringBuilder("");
 
 					Debug.Log("Received: \t"+content);
@@ -290,6 +289,7 @@ public class Client : MonoBehaviour
 		{
 			foreach(string m in messages)
 			{
+				Debug.Log("Message: " + m);
 				parseMessages(m);
 			}
 		}
@@ -299,6 +299,10 @@ public class Client : MonoBehaviour
 	{
 		//--Anthony--added these various if's
 		//Debug.Log(content);
+		if(content == "")
+		{
+			return;
+		}
 		Debug.Log("Parsing "+content);
 		if(content.Contains("Login Success"))//Login Success test<EOF>
 		{
@@ -313,7 +317,6 @@ public class Client : MonoBehaviour
 		else if (content.Contains ("Bomb;"))
 		{
 			bdata = content;
-			
 		}
 		else if (content.Contains ("Player;"))
 		{
@@ -322,7 +325,7 @@ public class Client : MonoBehaviour
 		//for the lobby
 		else if(content.Contains("P2L: ")||content.Contains("P1L: ")||content.Contains("P3L: ")||content.Contains("P4L: "))
 		{
-			
+			Debug.Log ("Client.cs: Player is in the Lobby");
 			//Debug.Log("Line 254 "+content);
 			//Debug.Log("Line 255 "+content.Substring(1,1));
 			int ind = int.Parse(content.Substring(1,1));//get the player number from the msg
@@ -363,6 +366,7 @@ public class Client : MonoBehaviour
 		else if(content == "Login Failed<EOF>")
 		{
 			Debug.Log("Login Failed");
+			GameObject.Find("login").GetComponentInChildren<login>().wipe();
 			connected = false;
 		}
 		else if(content.Contains("Registered"))

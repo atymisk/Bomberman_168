@@ -37,7 +37,11 @@ public class lobby : MonoBehaviour
 	}
 	public static void readyupdates(int index)
 	{
-		lists[index] += " - Ready!";
+		if(!loaded && index != Client.getIndex())
+		{
+			lists[index] += " - Ready!";
+			loaded = true;
+		}
 	}
 	public static void notreadyupdate(int index)
 	{
