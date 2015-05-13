@@ -64,7 +64,7 @@ public class Game
                 continue;
             }
             //Implement game logic and stuffs here.
-
+            timer = 0;
             sendPosition();
             sendBombs();
         }
@@ -291,7 +291,7 @@ public class Game
         //send message to all players of who's ready
         for (int i = 0; i < getplayerCount() && allPlayers[i] != null; i++)
         {
-            AsynchronousSocketListener.Send(getPlayer(index).clientSocket,"P" + index + "R: ready");
+            AsynchronousSocketListener.Send(getPlayer(i).clientSocket,"P" + (index+1) + "R: ready");
         }
         checkready();
     }
@@ -301,7 +301,7 @@ public class Game
         readycount = (readycount == 0 ? 0 : readycount-1) ;
         for (int i = 0; i < getplayerCount() && allPlayers[i] != null; i++)
         {
-            AsynchronousSocketListener.Send(getPlayer(index).clientSocket,"P" + index + "R: not ready");
+            AsynchronousSocketListener.Send(getPlayer(i).clientSocket, "P" + (index + 1) + "R: not ready");
         }
     }
     public void checkready()
@@ -309,7 +309,8 @@ public class Game
         if (readycount >= 2 && readycount == getplayerCount())
         {
             //start countdown??
-            Console.WriteLine("Game Starting...");
+            Console.WriteLine("\nGame Starting...\n");
+            AsynchronousSocketListener.sendALL("Game Start");
             GameLoop();
             //after countdown
             Console.WriteLine("Game has ended...????");
@@ -929,7 +930,7 @@ public class AsynchronousSocketListener
         data += "<EOF>";
         // Convert the string data to byte data using ASCII encoding.
         byte[] byteData = Encoding.ASCII.GetBytes(data);
-
+        Console.WriteLine("Message: " + data + " was sent to " + IPAddress.Parse(((IPEndPoint)handler.RemoteEndPoint).Address.ToString()));
         // This call is the crucial moment...
         // Begin sending the data to the remote device. <---------------------TO the REMOTE device
         handler.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallback), handler);
@@ -966,7 +967,7 @@ public class AsynchronousSocketListener
     public static void directedSend(Socket target, string content)
     {
         Send(target, content);
-        Console.WriteLine("Message: " + content + " was sent to " + IPAddress.Parse(((IPEndPoint)target.RemoteEndPoint).Address.ToString()));
+        //Console.WriteLine("Message: " + content + " was sent to " + IPAddress.Parse(((IPEndPoint)target.RemoteEndPoint).Address.ToString()));
     }
 
     public static void sendALL(string content)

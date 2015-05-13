@@ -87,7 +87,7 @@ public class Client : MonoBehaviour
 	//public static bool inlobby = false;
 	private static bool registered = false;
 	private static bool loggedin = false;
-
+	private static bool gamestart = false;
 	private static List<string> msgbuffer = new List<string>();
 	//Assuming that the method is Always called at the start of a scene since its not static
 	void Start()
@@ -322,6 +322,11 @@ public class Client : MonoBehaviour
 		{
 			data = content;
 		}
+		else if(content == "Game Start")
+		{
+			//Application.LoadLevel("MultiBomberman");
+			gamestart = true;
+		}
 		//for the lobby
 		else if(content.Contains("P2L: ")||content.Contains("P1L: ")||content.Contains("P3L: ")||content.Contains("P4L: "))
 		{
@@ -481,7 +486,11 @@ public class Client : MonoBehaviour
 	//using this to send and build messages given by player object
     void FixedUpdate()
     {
-
+		if(gamestart)
+		{
+			gamestart = false;
+			Application.LoadLevel("MultiBomberman");//<-----Whatever scene that needs to be loaded
+		}
 		if(connected && GameObject.Find ("bullet") != null)//--Anthony-- trying to prevent null reference exceptions
 		{
 //			string alive;
