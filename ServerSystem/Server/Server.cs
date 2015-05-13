@@ -283,13 +283,23 @@ public class Game
         }
         checkready();
     }
+    public void playerNotready(int index)
+    {
+        getPlayer(index).inLobby();
+        readycount = (readycount == 0 ? 0 : readycount-1) ;
+        for (int i = 0; i < allPlayers.Length && allPlayers[i] != null; i++)
+        {
+            AsynchronousSocketListener.lazySend("P" + (i + 1) + "R: not ready");
+        }
+    }
     public void checkready()
     {
         if (readycount >= 2 && readycount == allPlayers.Length)
         {
             //start countdown??
             Console.WriteLine("Game Starting...");
-            //after countdown
+            //server tells the clients that game is starting
+            //after countdown, it will send another message to tell clients to transition to game scene
         }
     }
 
@@ -342,8 +352,9 @@ public class DatabaseHandler
 
     public DatabaseHandler()
     {
-        server = IP.mySQL;
+        //server = IP.mySQL;
         //server = "169.234.20.168";
+        server = "127.0.0.1";
         db = "BombermanDB";
         serveruser = "root";
         serverpass = "master";
@@ -451,7 +462,7 @@ public class MessageHandler
         public List<string> split()
         {
             string[] strings = message.Split(semicolon);
-            foreach (string s in messageParts)
+            foreach (string s in messageParts)//Null reference exception here
             {
                 if (s != "")
                 {
@@ -606,6 +617,11 @@ public class MessageHandler
         int index = int.Parse(m.message.Substring(m.message.Length - 1));
         games[games.Count - 1].playerready(index);
     }
+    private static void playerisnotready(Message m)
+    {
+        int index = int.Parse(m.message.Substring(m.message.Length - 1));
+        games[games.Count - 1].playerNotready(index);
+    }
 
     private static void cleanEOF(Message m)
     {
@@ -677,9 +693,13 @@ public class MessageHandler
                         {
                             playerReady(m);
                         }
-                        else
+                        else if (m.message.Contains("This player is not ready "))
                         {
-                            m.split();
+                            playerisnotready(m);
+                        }
+                        else if (m.message.Contains(";"))//happens on "This is a test" beginning messages, changing
+                        {
+                            m.split();//Null reference exception
 
                             if (m.message.Substring(0, 1) == "P") // Player just sent you a location, server-senpai!
                             {

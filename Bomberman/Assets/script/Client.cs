@@ -36,26 +36,27 @@ public class OtherPlayer
 {
 	public string username;
 	public int x;
-	public int y;
+	public int z;
 
-	public OtherPlayer(string username, int x, int y)
+	public OtherPlayer(string username, int x, int z)
 	{
 		this.x = x;
-		this.y = y;
+		this.z = z;
 		this.username = username;
 	}
-	public void updateXY(int x,int y)
+	public void updateXZ(int x,int z)
 	{
 		this.x = x;
-		this.y = y;
+		this.z = z;
 	}
 }
 
 public class Client : MonoBehaviour
 {
-	public GameObject player;
+	public GameObject bomb;
 	public float x;
 	public float z;
+	static string data = "Player;0;T;9;8;0end;1;T;8;9;1end;2;T;9;7;2end;3;F;9;5;3end;<EOF>";
 	int TimerCount = 0;
 	int TimeSent = 0;
 	string message;
@@ -178,7 +179,7 @@ public class Client : MonoBehaviour
 		} 
 		else if (GameObject.Find ("bullet") != null) 
 		{
-			player.GetComponent<playerMovement>().clientid = myindex;
+			//player.GetComponent<playerMovement>().clientid = myindex;
 		}
 		//-----------Anthony--------------------//
 	}
@@ -255,7 +256,28 @@ public class Client : MonoBehaviour
 						//Debug.Log(content);
 						content = content.Substring(14);//username<EOF>
 						myuser = content.Substring(0,content.Length-5);
-						Debug.Log("Client.cs line 290: "+myuser);
+						//Debug.Log("Client.cs username: "+myuser);
+					}
+					else if (content.Contains ("Bomb;"))
+					{
+						//Debug.Log (content);
+						int found = content.IndexOf("Bomb;");
+						content = content.Substring(found + 5);
+						found = content.IndexOf(";");
+						float x = float.Parse(content.Substring(0, found));
+						content = content.Substring(found + 1);
+						found = content.IndexOf(";");
+						float z = float.Parse(content.Substring(0, found));
+						content = content.Substring(found + 1);
+						found = content.IndexOf(";");
+						//int strength = int.Parse(content.Substring(0,found));
+						//Jeffrey can't figure this out
+						//Instantiate(bomb, new Vector3(x, .5f, z), Quaternion.identity);
+						
+					}
+					else if (content.Contains ("Player;"))
+					{
+						data = content;
 					}
 					//for the lobby
 					else if(content.Contains("P1L: ")||content.Contains("P2L: ")||content.Contains("P3L: ")||content.Contains("P4L: "))
@@ -289,6 +311,13 @@ public class Client : MonoBehaviour
 						int ind = int.Parse(content.Substring(1,1));//get the player number from the msg
 						ind--;
 						lobby.readyupdates(ind);
+					}
+					else if(content.Contains("P1R: not")||content.Contains("P2R: not")||content.Contains("P3R: not")||content.Contains("P4R: not"))
+					{
+						Debug.Log("Client.cs not ready");
+						int ind = int.Parse(content.Substring(1,1));//get the player number from the msg
+						ind--;
+						lobby.notreadyupdate(ind);
 					}
 					else if(content == "Login Failed<EOF>")
 					{
@@ -418,30 +447,33 @@ public class Client : MonoBehaviour
 
 		if(connected && GameObject.Find ("bullet") != null)//--Anthony-- trying to prevent null reference exceptions
 		{
-			string alive;
-//			Debug.Log("connected");
-			if (player.activeInHierarchy){
-				alive = "T";
-			} 
-			else {
-				alive = "F";
-			}
-			string index = myindex.ToString();
-			string xs = x.ToString();
-			string zs = z.ToString();
-			message = index + ";" + alive + ";" + xs + ";" + zs + ";";
-	        TimerCount++; // simple timer for testing purposes. delete later.
-	        if (TimerCount > 5)
-	        {
-	            TimerCount = 0;
-
-	            // send test message.
-				++TimeSent;
-				lazySend("Hi Server, my timer has reached 0. This is my "+ TimeSent + "th time!");
-				lazySend(message);
-	            Debug.Log("Resetted "+ TimeSent + "th time.");
-	        } // END of timer implementation
+//			string alive;
+////			Debug.Log("connected");
+//			if (player.activeInHierarchy){
+//				alive = "T";
+//			} 
+//			else {
+//				alive = "F";
+//			}
+//			string index = myindex.ToString();
+//			string xs = x.ToString();
+//			string zs = z.ToString();
+//			message = "Player;" + index + ";" + alive + ";" + xs + ";" + zs + ";";
+//	        TimerCount++; // simple timer for testing purposes. delete later.
+//	        if (TimerCount > 5)
+//	        {
+//	            TimerCount = 0;
+//
+//	            // send test message.
+//				//++TimeSent;
+//				//lazySend("Hi Server, my timer has reached 0. This is my "+ TimeSent + "th time!");
+//				lazySend(message);
+//	            //Debug.Log("Resetted "+ TimeSent + "th time.");
+//	        } // END of timer implementation
 		}
     }
-
+	//Jeffrey protection levels are evil
+	public string GetData(){
+		return data;
 	}
+}

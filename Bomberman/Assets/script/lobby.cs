@@ -30,10 +30,20 @@ public class lobby : MonoBehaviour
 		{
 			c.sendmsg("This player is ready " + Client.getIndex());
 		}
+		else
+		{
+			c.sendmsg("This player is not ready "+Client.getIndex ());
+		}
 	}
 	public static void readyupdates(int index)
 	{
 		lists[index] += " - Ready!";
+	}
+	public static void notreadyupdate(int index)
+	{
+		Debug.Log("Lobby.cs notreadyupdate " + lists[index].IndexOf("-"));
+
+		lists[index] = lists[index].Substring(0,lists[index].IndexOf("-")-1);
 	}
 
 	public static void setup(string p,int index)
