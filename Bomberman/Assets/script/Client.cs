@@ -334,7 +334,6 @@ public class Client : MonoBehaviour
 			//Debug.Log("Line 254 "+content);
 			//Debug.Log("Line 255 "+content.Substring(1,1));
 			int ind = int.Parse(content.Substring(1,1));//get the player number from the msg
-			//Debug.Log(ind);
 			ind--;
 			string msg = content.Substring(5);//username|x|y<EOF>
 			int index = msg.IndexOf("|");
@@ -489,7 +488,7 @@ public class Client : MonoBehaviour
 		if(gamestart)
 		{
 			gamestart = false;
-			Application.LoadLevel("MultiBomberman");//<-----Whatever scene that needs to be loaded
+			Application.LoadLevel("Bomberman");//<-----Whatever scene that needs to be loaded
 		}
 		if(connected && GameObject.Find ("bullet") != null)//--Anthony-- trying to prevent null reference exceptions
 		{
@@ -530,4 +529,7 @@ public class Client : MonoBehaviour
     {
         bdata = "";
     }
+	public int index(){
+		return myindex;
+	}
 }

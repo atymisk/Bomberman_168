@@ -55,18 +55,19 @@ public class Game
     public void GameLoop()
     {
         int timer = 0;
-        int maxTimerValue = 40; // change this value
+        int maxTimerValue = 100; // change this value
         // Continue looping until game ends and a winner is determined.
         while (status != Status.ENDED)
         {
-            if (++timer != maxTimerValue)
+            if (timer == maxTimerValue)
             {
-                continue;
+                timer = 0;
+                //sendPosition();
+                //sendBombs();
             }
+            timer++;
             //Implement game logic and stuffs here.
-            timer = 0;
-            sendPosition();
-            sendBombs();
+
         }
     }
 
@@ -525,6 +526,7 @@ public class MessageHandler
         //Console.WriteLine("Username: "+user + "\n" +"Password: "+ pass);
 
         //check the database with the user and pass
+        /*
         if (DatabaseHandler.verify(user, pass))
         {
             AsynchronousSocketListener.Send(m.client,"Login Success " + user);
@@ -535,6 +537,7 @@ public class MessageHandler
             AsynchronousSocketListener.Send(m.client,"Login Failed");
         }
         //AsynchronousSocketListener.lazySend("Login Success<EOF>");
+         */
     }
 
     private static void registering(Message m)

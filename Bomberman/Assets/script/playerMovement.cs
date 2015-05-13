@@ -19,6 +19,10 @@ public class playerMovement : MonoBehaviour {
 	int times;
 	void Start() {
 		rb = GetComponent<Rigidbody>();
+		clientid = client.GetComponent<Client> ().index() - 1;
+		Debug.Log ("hi");
+		Debug.Log (clientid);
+		Debug.Log ("bye");
 	}
 
 	void Update() {
@@ -55,7 +59,8 @@ public class playerMovement : MonoBehaviour {
 			string message = "Player;" + index + ";T;" + xs + ";" + zs + ";";
 			Debug.Log (message);
 			times++;
-			if (times > 40) {
+			if (times > 100) {
+
 				Client.lazySend (message);
 				times = 0;
 			}
