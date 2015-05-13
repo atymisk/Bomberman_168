@@ -19,10 +19,10 @@ public class playerMovement : MonoBehaviour {
 	int times;
 	void Start() {
 		rb = GetComponent<Rigidbody>();
-		clientid = client.GetComponent<Client> ().index() - 1;
-		Debug.Log ("hi");
-		Debug.Log (clientid);
-		Debug.Log ("bye");
+		clientid = client.GetComponent<Client> ().index();
+		//Debug.Log ("hi");
+		Debug.Log ("player script line 24: "+clientid);
+		//Debug.Log ("bye");
 	}
 
 	void Update() {
@@ -75,7 +75,7 @@ public class playerMovement : MonoBehaviour {
 			rb.useGravity = false;
 			//Debug.Log (data);
 			collection = split (data);
-			Debug.Log (data);
+			//Debug.Log (data);
 			if (playerid * 5 + 6 <= collection.Count){
 				if (collection[playerid*5 + 2] == "F") {
 					this.gameObject.SetActive (false);

@@ -55,7 +55,7 @@ public class Client : MonoBehaviour
 {
     public float x;
     public float z;
-    static string data = "Player;0;T;-9;-9;0end;1;T;9;9;1end;2;T;-9;9;2end;3;F;9;-9;3end;";
+    static string data = "Player;0;T;-9;-9;0end;1;T;9;9;1end;2;T;-9;9;2end;3;T;9;-9;3end;";
     static string bdata = "";
 	//int TimerCount = 0;
 	//int TimeSent = 0;
@@ -330,7 +330,7 @@ public class Client : MonoBehaviour
 		//for the lobby
 		else if(content.Contains("P2L: ")||content.Contains("P1L: ")||content.Contains("P3L: ")||content.Contains("P4L: "))
 		{
-			Debug.Log ("Client.cs: Player is in the Lobby");
+			//Debug.Log ("Client.cs: Player is in the Lobby");
 			//Debug.Log("Line 254 "+content);
 			//Debug.Log("Line 255 "+content.Substring(1,1));
 			int ind = int.Parse(content.Substring(1,1));//get the player number from the msg
@@ -352,6 +352,7 @@ public class Client : MonoBehaviour
 			{
 				myindex = ind;
 			}
+			//Debug.Log("Client-Lobby: user: "  + user + " Index: " + ind);
 			lobby.setup(user,ind);
 		}
 		else if(content.Contains("P1R: ready")||content.Contains("P2R: ready")||content.Contains("P3R: ready")||content.Contains("P4R: ready"))

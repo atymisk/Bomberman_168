@@ -83,7 +83,7 @@ public class Game
         }*/
     }
 
-    private void sendPosition() // Player;0;T;9;8;0end;1;T;8;9;1end;2;T;9;7;2end;3;F;9;6;3end;
+    public void sendPosition() // Player;0;T;9;8;0end;1;T;8;9;1end;2;T;9;7;2end;3;F;9;6;3end;
     {
         string package = "Player;";
         for (int i = 0; i < getplayerCount(); i++)
@@ -101,7 +101,7 @@ public class Game
     }
 
     // If there are still bombs in the list, send them out and delete.
-    private void sendBombs() // Bomb;x;z;strength;
+    public void sendBombs() // Bomb;x;z;strength;
     {
         string header = "Bomb;";
         while (allBombs.Count != 0)
@@ -251,13 +251,13 @@ public class Game
         switch (nextindex)
         {
             case 0:
-                x = 9; z = 9;
+                x = -9; z = -9;
                 break;
             case 1:
-                x = 9; z = -9;
+                x = 9; z = 9;
                 break;
             case 2:
-                x = -9; z = -9;
+                x = 9; z = -9;
                 break;
             case 3:
                 x = -9; z = 9;
@@ -312,9 +312,11 @@ public class Game
             //start countdown??
             Console.WriteLine("\nGame Starting...\n");
             AsynchronousSocketListener.sendALL("Game Start");
-            GameLoop();
+            //Clear the msg buffer/queue
+            MessageHandler.clearmessages();
+            //GameLoop();
             //after countdown
-            Console.WriteLine("Game has ended...????");
+            //Console.WriteLine("Game has ended...????");
         }
     }
 
@@ -507,8 +509,13 @@ public class MessageHandler
     public static void addMessage(Socket client, string message)
     {
         allMessages.Add(new Message(client, message));
+        //Console.WriteLine("New Message Added, Total: "+allMessages.Count + ", index: " + (allMessages.Count-1));
     }
-
+    public static void clearmessages()
+    {
+        allMessages.Clear();
+        //Console.WriteLine("Cleared: "+allMessages.Count);
+    }
     private static void attemptingLogin(Message m)
     {
         //parse the string for user and pass
@@ -523,13 +530,13 @@ public class MessageHandler
         //index = msg.IndexOf("<");//this works
         pass = msg; //.Substring(0);
 
-        //Console.WriteLine("Username: "+user + "\n" +"Password: "+ pass);
+        //AsynchronousSocketListener.Send(m.client, "Login Success " + user);
 
         //check the database with the user and pass
-        /*
+        
         if (DatabaseHandler.verify(user, pass))
         {
-            AsynchronousSocketListener.Send(m.client,"Login Success " + user);
+            AsynchronousSocketListener.Send(m.client,"Login Success " + user);//need this line for logins to work
             //add player object here?
         }
         else
@@ -537,7 +544,7 @@ public class MessageHandler
             AsynchronousSocketListener.Send(m.client,"Login Failed");
         }
         //AsynchronousSocketListener.lazySend("Login Success<EOF>");
-         */
+         
     }
 
     private static void registering(Message m)
@@ -579,7 +586,7 @@ public class MessageHandler
             count = 0;
         }
     }
-    static bool started = false; // DELETE
+    //static bool started = false; // DELETE
     private static void updatePlayerLocation(Message m) // for player location: Player;index;T/F;x;z;
     {
         try
@@ -609,13 +616,15 @@ public class MessageHandler
             }
             player.x = x;
             player.z = z;
+            games[0].sendPosition();
         }
         catch (Exception e)
         {
+            Console.WriteLine(e.ToString());
             return;
         }
-        if (started == false) // DELETE
-        { games[0].GameLoop(); started = true; }
+        /*if (started == false) // DELETE
+        { games[0].GameLoop(); started = true; }*/
     }
 
     private static void bombProposal(Message m) // for bomb proposal: Bomb;x;z;strength;
@@ -636,9 +645,11 @@ public class MessageHandler
             // Implement here. No need to receive ACKs for now.
             // The bomb will be sent out to other players soon, but not here.
             game.addBomb(x, z, strength);
+            game.sendBombs();
         }
         catch (Exception e)
         {
+            Console.WriteLine(e.ToString());
             return;
         }
     }
@@ -685,25 +696,20 @@ public class MessageHandler
                 // Parse the first message that does not include an EOF tag.
                 // If all messages have EOF tag, clean it.
                 Message m = allMessages[0];
-                /*foreach (Message message in allMessages)
-                {
-                    if ((message.message != "") && (!message.message.Contains("<EOF>")))
-                    {
-                        m = message;
-                        break;
-                    }
-                }*/
-
+                
                 if (m != null)
                 {
+                    //   Console.WriteLine("Message Received: " + m.message);
                     if (m.message.Contains("<EOF>"))
                     {
+                        //Console.WriteLine(m.message);
                         cleanEOF(m);
                         continue;
                     }
                     if (m.message == "")
                     {
                         allMessages.Remove(m);
+                        //Console.WriteLine("Message removed(EMPTY): " + allMessages.Count);
                         continue;
                     }
 
@@ -717,13 +723,32 @@ public class MessageHandler
                         {
                             attemptingLogin(m);
                         }
-                        else if (m.message.Contains("Registering: "))//Registering: username|password<EOF>
-                        {
-                            registering(m);
-                        }
                         else if (m.message.Contains("Awaiting Game"))//Awaiting Game username<EOF>
                         {
                             awaitingGame(m);
+                        }
+                        else if (m.message.Contains(";"))//happens on "This is a test" beginning messages, changing
+                        {
+                            m.split();//Null reference exception
+
+                            if (m.messageParts[0] == "Player") // Player just sent you a location, server-senpai!
+                            {
+                                Console.WriteLine("\nPlayer Update");
+                                updatePlayerLocation(m);
+                            }
+                            else if (m.messageParts[0] == "Bomb") // Bomb proposal, be nice and approve asap
+                            {
+                                Console.WriteLine("\nBomb Update");
+                                bombProposal(m);
+                            }
+                            /*else if (m.message.Substring(0, 5) == "ACK;B") // One more player placed the proposed bomb
+                            {
+                                bombACK(m);
+                            }*/
+                        }
+                        else if (m.message.Contains("Registering: "))//Registering: username|password<EOF>
+                        {
+                            registering(m);
                         }
                         else if (m.message.Contains("This player is ready "))
                         {
@@ -733,23 +758,7 @@ public class MessageHandler
                         {
                             playerisnotready(m);
                         }
-                        else if (m.message.Contains(";"))//happens on "This is a test" beginning messages, changing
-                        {
-                            m.split();//Null reference exception
 
-                            if (m.messageParts[0] == "Player") // Player just sent you a location, server-senpai!
-                            {
-                                updatePlayerLocation(m);
-                            }
-                            else if (m.messageParts[0] == "Bomb") // Bomb proposal, be nice and approve asap
-                            {
-                                bombProposal(m);
-                            }
-                            /*else if (m.message.Substring(0, 5) == "ACK;B") // One more player placed the proposed bomb
-                            {
-                                bombACK(m);
-                            }*/
-                        }
                     }
                     catch (Exception e)
                     {
@@ -759,7 +768,13 @@ public class MessageHandler
                     finally
                     {
                         allMessages.Remove(m);
+                        //Console.WriteLine("Message removed: " + allMessages.Count);
                     }
+                }
+                else
+                {
+                   // Console.WriteLine("Message removed(NULL): " + allMessages.Count);
+                    allMessages.Remove(m);
                 }
             }
         }
@@ -894,12 +909,12 @@ public class AsynchronousSocketListener
             if (content.IndexOf("<EOF>") > -1)
             {
                 // All the data has been read from the client, add into the message processing list.
-                Console.WriteLine("Read {0} bytes from socket." /*\n Data : {1}"*/, content.Length, content);
-
+                //Console.WriteLine("Read {0} bytes from socket." /*\n Data : {1}"*/, content.Length, content);
+                
                 // I haven't figured out how to retrieve the IP yet, so it's "content, content" for now.
                 // It should be "IP, content" later. #HalpIsNeeded.
 
-                //Console.WriteLine("Message Received: " + content);
+                Console.WriteLine("\nMessage Received: " + content);
 
                 MessageHandler.addMessage(listener, content);
 
