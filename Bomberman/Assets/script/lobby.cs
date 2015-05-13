@@ -37,17 +37,21 @@ public class lobby : MonoBehaviour
 	}
 	public static void readyupdates(int index)
 	{
-		if(!loaded && index != Client.getIndex())
-		{
+		//if(!loaded || index != Client.getIndex())
+		//{
+			Debug.Log ("lobby.cs: readyupdates");
 			lists[index] += " - Ready!";
-			loaded = true;
-		}
+			//loaded = true;
+		//}
 	}
 	public static void notreadyupdate(int index)
 	{
 		Debug.Log("Lobby.cs notreadyupdate " + lists[index].IndexOf("-"));
-
-		lists[index] = lists[index].Substring(0,lists[index].IndexOf("-")-1);
+		int i = lists[index].IndexOf("-");
+		if(i != -1)
+		{
+			lists[index] = lists[index].Substring(0,lists[index].IndexOf("-")-1);
+		}
 	}
 
 	public static void setup(string p,int index)

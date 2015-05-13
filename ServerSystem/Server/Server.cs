@@ -291,7 +291,7 @@ public class Game
         //send message to all players of who's ready
         for (int i = 0; i < getplayerCount() && allPlayers[i] != null; i++)
         {
-            AsynchronousSocketListener.Send(getPlayer(index).clientSocket,"P" + (i + 1) + "R: ready");
+            AsynchronousSocketListener.Send(getPlayer(index).clientSocket,"P" + index + "R: ready");
         }
         checkready();
     }
@@ -301,7 +301,7 @@ public class Game
         readycount = (readycount == 0 ? 0 : readycount-1) ;
         for (int i = 0; i < getplayerCount() && allPlayers[i] != null; i++)
         {
-            AsynchronousSocketListener.Send(getPlayer(index).clientSocket,"P" + (i + 1) + "R: not ready");
+            AsynchronousSocketListener.Send(getPlayer(index).clientSocket,"P" + index + "R: not ready");
         }
     }
     public void checkready()
@@ -378,9 +378,10 @@ public class DatabaseHandler
 
     public DatabaseHandler()
     {
-        server = IP.mySQL;
+        //server = IP.mySQL;
         //server = "169.234.20.168";
-        //server = "127.0.0.1";
+        //server = "70.187.161.177";
+        server = "127.0.0.1";
         db = "BombermanDB";
         serveruser = "root";
         serverpass = "master";
@@ -897,8 +898,9 @@ public class AsynchronousSocketListener
                 //Console.WriteLine("Message Received: " + content);
 
                 MessageHandler.addMessage(listener, content);
-                Console.WriteLine("\nListener(Remote): " + IPAddress.Parse(((IPEndPoint)listener.RemoteEndPoint).Address.ToString()));
-                Console.WriteLine("Listener(Local): " + IPAddress.Parse(((IPEndPoint)listener.LocalEndPoint).Address.ToString()) + "\n");
+
+                /*Console.WriteLine("\nListener(Remote): " + IPAddress.Parse(((IPEndPoint)listener.RemoteEndPoint).Address.ToString()));
+                Console.WriteLine("Listener(Local): " + IPAddress.Parse(((IPEndPoint)listener.LocalEndPoint).Address.ToString()) + "\n");*/
                 //Console.WriteLine("\n\n");
                 //** Echo the data back to the client.**
                 // (Probably not necessary, but play around with it.)

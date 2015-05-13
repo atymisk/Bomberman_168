@@ -105,7 +105,7 @@ public class Client : MonoBehaviour
             // The name of the remote device is "host.contoso.com".
             ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
             ipAddress = ipHostInfo.AddressList[0];
-			ipAddress = IPAddress.Parse("169.234.17.166");
+	//		ipAddress = IPAddress.Parse("169.234.17.166");
             remoteEP = new IPEndPoint(ipAddress, port);
 
             // Create a TCP/IP socket.
@@ -354,13 +354,14 @@ public class Client : MonoBehaviour
 		{
 			int ind = int.Parse(content.Substring(1,1));//get the player number from the msg
 			ind--;
+			Debug.Log("Client.cs ready: "+ind);
 			lobby.readyupdates(ind);
 		}
 		else if(content.Contains("P1R: not")||content.Contains("P2R: not")||content.Contains("P3R: not")||content.Contains("P4R: not"))
 		{
-			Debug.Log("Client.cs not ready");
 			int ind = int.Parse(content.Substring(1,1));//get the player number from the msg
 			ind--;
+			Debug.Log("Client.cs not ready: " + ind);
 			lobby.notreadyupdate(ind);
 		}
 		else if(content == "Login Failed<EOF>")
