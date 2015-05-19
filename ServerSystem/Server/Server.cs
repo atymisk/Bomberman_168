@@ -8,16 +8,16 @@ using MySql.Data.MySqlClient;
 
 public class IP
 {
-    public const string Anthony = "169.234.17.166";//school ip
-    public const string Anthony1 = "70.187.161.177";//my other public ip's
-    public const string Anthony2 = "71.94.130.204";
-    public const string Faye = "169.234.29.80";
+    public const string Anthony = "169.234.6.190";
+    public const string Faye = "169.234.9.207";
+    public const string Jeffrey = "169.234.22.25";
     public const string mySQL = IP.Anthony;
 }
+
 // State object for reading client data asynchronously
 public class StateObject
 {
-    // Client  socket.
+    // Client socket.
     public Socket workSocket = null;
     // Size of receive buffer.
     public const int BufferSize = 1024;
