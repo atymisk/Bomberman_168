@@ -17,9 +17,10 @@ public class playerMovement : MonoBehaviour {
 	string data, mydata;
 	List<string> collection;
 	int times;
+	int count = 0;
 	void Start() {
 		rb = GetComponent<Rigidbody>();
-		clientid = client.GetComponent<Client> ().index();
+		clientid = Client.getIndex();
 		//Debug.Log ("hi");
 		Debug.Log ("player script line 24: "+clientid);
 		//Debug.Log ("bye");
@@ -41,7 +42,7 @@ public class playerMovement : MonoBehaviour {
 	void FixedUpdate () {
 
 		data = client.GetComponent<Client> ().GetData ();
-		Debug.Log (data);
+//		Debug.Log (data);
 
 		if (playerid == clientid && alive) {
 			client.GetComponent<Client> ().x = rb.position [0];
@@ -57,10 +58,10 @@ public class playerMovement : MonoBehaviour {
 			string xs = rb.position [0].ToString ();
 			string zs = rb.position [2].ToString ();
 			string message = "Player;" + index + ";T;" + xs + ";" + zs + ";";
-			Debug.Log (message);
+			//Debug.Log (message);
 			times++;
-			if (times > 100) {
-
+			if (times > 50) {
+				Debug.Log (count);
 				Client.lazySend (message);
 				times = 0;
 			}
