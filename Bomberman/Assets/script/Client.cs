@@ -102,8 +102,12 @@ public class Game
 
 	public Bomb popBomb()
 	{
-		Bomb bomb = allBombs[0];
-		allBombs.Remove (bomb);
+		Bomb bomb = null;
+		if (allBombs.Count > 0)
+		{
+			bomb = allBombs[0];
+			allBombs.Remove (bomb);
+		}
 		return bomb;
 	}
 
@@ -127,7 +131,7 @@ public class Game
 			return;
 		}
 
-		for (int playerNumber = 1; i < messageParts.Count; i+=5)
+		for (int playerNumber = 1; playerNumber < messageParts.Count; playerNumber+=5)
 		{
 			allPlayers[playerNumber].active = Parser.convertBool(messageParts[playerNumber+1]);
 			allPlayers[playerNumber].setPosition(
@@ -138,9 +142,9 @@ public class Game
 
 public static class Parser
 {
-	private string[] EOF = new string[]{"<EOF>"};
+	private static string[] EOF = new string[]{"<EOF>"};
 
-	public List<string> cleanEOF(string content)
+	public static List<string> cleanEOF(string content)
 	{
 		//clean and put into buffer
 		string[] messages = content.Split(EOF,StringSplitOptions.None);//EOF taken out
@@ -155,7 +159,7 @@ public static class Parser
 		return listOfMessages;
 	}
 
-	public bool convertBool(string tf)
+	public static bool convertBool(string tf)
 	{
 		if (tf == "T")
 		{
@@ -166,7 +170,7 @@ public static class Parser
 
 	public static List<string> split(string content)
 	{
-		string[] strings = content.Split(";");
+		string[] strings = content.Split(';');
 		List<string> messageParts = new List<string>();
 		foreach (string s in strings)
 		{
@@ -487,11 +491,8 @@ public class Client : MonoBehaviour
 		//Debug.Log("Line 262: "+user);
 		msg = msg.Substring(index+1);//x|y<EOF>
 		index = msg.IndexOf("|");
-		int x = int.Parse (msg.Substring(0,index));
-		
-		msg = msg.Substring(index+1);//y<EOF>
+
 		//index = msg.IndexOf("<");
-		int y = int.Parse(msg.Substring(0));
 
 		if(user == myuser)//if this message happens to contain the client's info
 		{
@@ -540,7 +541,7 @@ public class Client : MonoBehaviour
             Socket client = so.workSocket;
 
             // Complete sending the data to the remote device.
-            int bytesSent = client.EndSend(ar);
+            //int bytesSent = client.EndSend(ar);
             //Debug.Log("Sent " + bytesSent + " bytes to server.");
 
             // Signal that all bytes have been sent.
@@ -691,22 +692,7 @@ public class Client : MonoBehaviour
 	{
 		return myindex;
 	}
-	
-	//Jeffrey protection levels are evil
-	public string GetData(){
-		return data;
-	}
-	
-	public string GetBdata()
-	{
-		return bdata;
-	}
 
-	public void deleteBData()
-	{
-		bdata = "";
-	}
-	
 	#endregion
 	  
 }

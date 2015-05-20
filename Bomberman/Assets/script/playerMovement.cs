@@ -5,7 +5,7 @@ using System.Collections.Generic;
 public class playerMovement : MonoBehaviour {
 
 	public float speed;
-	public Rigidbody rb, bomb, clone;
+	Rigidbody rb, bomb, clone;
 	public Vector3 movement;
 	public int timer = 100;
 	public int dropTime;
@@ -14,8 +14,9 @@ public class playerMovement : MonoBehaviour {
 	public GameObject client;
 	public bool active = false;
 	public bool alive = true;
-	string data, mydata;
-	List<string> collection;
+	string mydata;
+	List<Game.Player> allplayer = Client.game.allPlayers;
+
 	int times;
 	int count = 0;
 	void Start() {
@@ -41,12 +42,11 @@ public class playerMovement : MonoBehaviour {
 	
 	void FixedUpdate () {
 
-		data = client.GetComponent<Client> ().GetData ();
 //		Debug.Log (data);
 
 		if (playerid == clientid && alive) {
-			client.GetComponent<Client> ().x = rb.position [0];
-			client.GetComponent<Client> ().z = rb.position [2];
+			//client.GetComponent<Client> ().x = rb.position [0];
+			//client.GetComponent<Client> ().z = rb.position [2];
 			float moveHorizontal = Input.GetAxis ("Horizontal");
 			float moveVertical = Input.GetAxis ("Vertical");
 
@@ -74,18 +74,17 @@ public class playerMovement : MonoBehaviour {
 			this.gameObject.SetActive (false);
 		} else {
 			rb.useGravity = false;
-			//Debug.Log (data);
-			collection = split (data);
-			//Debug.Log (data);
-			if (playerid * 5 + 6 <= collection.Count){
-				if (collection[playerid*5 + 2] == "F") {
-					this.gameObject.SetActive (false);
-				}
-				float locx = float.Parse (collection[5*playerid + 3]);
-				float locz = float.Parse (collection[5*playerid + 4]);
+			if (allplayer.Count >= playerid + 1 && allplayer[playerid].active){
+				//float locx = float.Parse (collection[5*playerid + 3]);
+				//float locz = float.Parse (collection[5*playerid + 4]);
+				float locx = allplayer[playerid].x;
+				float locz = allplayer[playerid].z;
 				//Debug.Log (locx);
 				//Debug.Log (locz);
 				transform.position = new Vector3 (locx, .5f, locz);
+			}
+			else {
+				this.gameObject.SetActive (false);
 			}
 		}
 	}

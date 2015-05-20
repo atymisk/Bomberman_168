@@ -2,24 +2,23 @@
 using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
-
+/*
 public class scoring : MonoBehaviour {
 
 	public GameObject words;
 	public Client client;
 	Text texty;
 	string data;
-	List<string> collection;
+	List<Game.Player> allplayer = Client.game.allPlayers;
+
 
 	void Start () {
 		texty = words.GetComponent<Text> ();
 	}
 	//public Client client;
 	void FixedUpdate () {
-		data = client.GetComponent<Client> ().GetData ();
-		collection = split (data);
 		texty.text = "";
-		if (6 <= collection.Count){
+		if (6 <= allplayer.Count){
 			if (collection[2] == "F") {
 				texty.text = "Baller -        Not Pro\n";
 			}
@@ -67,3 +66,4 @@ public class scoring : MonoBehaviour {
 		return message_parts;
 	}
 }
+*/
