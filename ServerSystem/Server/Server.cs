@@ -473,26 +473,41 @@ public class DatabaseHandler
             MySqlDataReader reader = cmd.ExecuteReader();
             while (reader.Read())
             {
-                wins = reader.GetInt32("wins");
-                games = reader.GetInt32("games");
+                int winsIndex = reader.GetOrdinal("wins");
+                if (!reader.IsDBNull(winsIndex))
+                {
+                    wins = reader.GetInt32("wins");
+                }
+
+                int gamesIndex = reader.GetOrdinal("games");
+                if (!reader.IsDBNull(gamesIndex))
+                {
+                    games = reader.GetInt32("games");
+                }
             }
             reader.Close();
+
+            Console.WriteLine("JUST RETRIEVED DATA, wins={0}, games={1}", wins, games);
 
             // If this user won the game, increment 'wins',
             // also increment 'games' either way
             if (won)
             {
-                wins = (wins == null) ? 1 : wins + 1;
+                wins++;
             }
-            games = (games == null) ? 1 : games + 1;
+            games++;
+
+            Console.WriteLine("BEFORE UPDATING, wins={0}, games={1}", wins, games);
 
             // Update back the new information through query
-            query = String.Format("UPDATE * SET wins='{0}', games='{1}' WHERE username='{2}'", wins, games, user);
+            query = String.Format("UPDATE bmdb.main SET wins={0}, games={1} WHERE username='{2}'", wins, games, user);
             cmd = new MySqlCommand(query, connect);
 
             // Check if the update was successful
             int result = cmd.ExecuteNonQuery();
             CloseConnection();
+
+            Console.WriteLine("Result > 0 ?  {0}", (result>0));
             return result > 0;
         }
         return false;
