@@ -2,7 +2,7 @@
 using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
-/*
+
 public class scoring : MonoBehaviour {
 
 	public GameObject words;
@@ -18,36 +18,36 @@ public class scoring : MonoBehaviour {
 	//public Client client;
 	void FixedUpdate () {
 		texty.text = "";
-		if (6 <= allplayer.Count){
-			if (collection[2] == "F") {
-				texty.text = "Baller -        Not Pro\n";
-			}
-			else {
+		if (1 <= allplayer.Count){
+			if (allplayer[0].active) {
 				texty.text = "Baller -        Pro\n";
 			}
-		}
-		if (11 <= collection.Count){
-			if (collection[7] == "F") {
-				texty.text += "Ballistic -     Not Pro\n";
-			}
 			else {
+				texty.text = "Baller -        Not Pro\n";
+			}
+		}
+		if (2 <= allplayer.Count){
+			if (allplayer[1].active) {
 				texty.text += "Ballistic -     Pro\n";
 			}
-		}
-		if (16 <= collection.Count){
-			if (collection[12] == "F") {
-				texty.text += "Ballerina -   Not Pro\n";
-			}
 			else {
+				texty.text += "Ballistic -     Not Pro\n";
+			}
+		}
+		if (3 <= allplayer.Count){
+			if (allplayer[2].active) {
 				texty.text += "Ballerina -   Pro\n";
 			}
+			else {
+				texty.text += "Ballerina -   Not Pro\n";
+			}
 		}
-		if (21 <= collection.Count){
-			if (collection[17] == "F") {
-				texty.text += "Balltimore - Not Pro\n";
+		if (4 <= allplayer.Count){
+			if (allplayer[3].active) {
+				texty.text += "Balltimore - Pro\n";
 			}
 			else {
-				texty.text += "Balltimore - Pro\n";
+				texty.text += "Balltimore - Not Pro\n";
 			}
 		}
 	}
@@ -66,4 +66,3 @@ public class scoring : MonoBehaviour {
 		return message_parts;
 	}
 }
-*/
