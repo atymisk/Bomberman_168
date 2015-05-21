@@ -487,7 +487,7 @@ public class DatabaseHandler
             }
             reader.Close();
 
-            Console.WriteLine("JUST RETRIEVED DATA, wins={0}, games={1}", wins, games);
+            //Console.WriteLine("JUST RETRIEVED DATA, wins={0}, games={1}", wins, games);
 
             // If this user won the game, increment 'wins',
             // also increment 'games' either way
@@ -497,7 +497,7 @@ public class DatabaseHandler
             }
             games++;
 
-            Console.WriteLine("BEFORE UPDATING, wins={0}, games={1}", wins, games);
+            //Console.WriteLine("BEFORE UPDATING, wins={0}, games={1}", wins, games);
 
             // Update back the new information through query
             query = String.Format("UPDATE bmdb.main SET wins={0}, games={1} WHERE username='{2}'", wins, games, user);
@@ -507,7 +507,7 @@ public class DatabaseHandler
             int result = cmd.ExecuteNonQuery();
             CloseConnection();
 
-            Console.WriteLine("Result > 0 ?  {0}", (result>0));
+            //Console.WriteLine("Result > 0 ?  {0}", (result>0));
             return result > 0;
         }
         return false;
