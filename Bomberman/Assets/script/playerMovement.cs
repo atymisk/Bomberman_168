@@ -48,7 +48,7 @@ public class playerMovement : MonoBehaviour {
 			string xs = rb.position [0].ToString ();
 			string zs = rb.position [2].ToString ();
 			times++;
-			if (times > 50) {
+			if (times > 10) {
 				Debug.Log ("Player;" + index + ";T;" + xs + ";" + zs + ";" + rb.velocity.x + ";" + rb.velocity.y + ";");
 				Client.lazySend ("Player;" + index + ";T;" + xs + ";" + zs + ";" + rb.velocity.x + ";" + rb.velocity.y + ";");
 				times = 0;
