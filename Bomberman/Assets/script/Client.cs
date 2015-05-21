@@ -10,8 +10,8 @@ using System.Text;
 public class IP
 {
 	public enum Address { ANTHONY, FAYE, JEFFREY, MYSQL, LOCALHOST };
-	public const string Anthony = "169.234.6.190";
-    public const string Faye = "169.234.12.76";
+    public const string Anthony = "169.234.2.124";
+    public const string Faye = "169.234.26.221";
 	public const string Jeffrey = "169.234.13.110";
 	public const string mySQL = IP.Anthony;
 
@@ -300,7 +300,7 @@ public class Client : MonoBehaviour
 			default:
 				ipAddress = ipHostInfo.AddressList[0]; break;
 			}
-			ipAddress = ipHostInfo.AddressList[0];
+
 			// Make the connection
             remoteEP = new IPEndPoint(ipAddress, port);
 

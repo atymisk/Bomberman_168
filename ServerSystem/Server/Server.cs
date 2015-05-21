@@ -8,8 +8,8 @@ using MySql.Data.MySqlClient;
 
 public class IP
 {
-    public const string Anthony = "169.234.12.50";
-    public const string Faye = "169.234.9.207";
+    public const string Anthony = "169.234.2.124";
+    public const string Faye = "169.234.26.221";
     public const string Jeffrey = "169.234.22.25";
     public const string mySQL = IP.Anthony;
 }
@@ -368,18 +368,29 @@ public class Game
             }
             winner = i;
         }
-        switch (numOfPlayers)
+
+        if (numOfPlayers <= 1) // there is one or fewer player standing, winner?
         {
-            case 1: // we have a winner. not sure who it is though.
-                Console.WriteLine("------------------------Game Over!----------------------------");
-                Console.WriteLine("Player " + (winner + 1) + " won!");
-                sendGameOver(winner);
-                break;
-            case 0: // everybody died lulz
-                Console.WriteLine("Everybody died! Oh noes!");
-                sendGameOver(-1);
-                break;
-            default: break;
+            switch (numOfPlayers)
+            {
+                case 1: // we have a winner. not sure who it is though.
+                    Console.WriteLine("------------------------Game Over!----------------------------");
+                    Console.WriteLine("Player " + (winner /*+1*/) + " won!");
+                    sendGameOver(winner);
+                    break;
+                case 0: // everybody died lulz
+                    Console.WriteLine("Everybody died! Oh noes!");
+                    sendGameOver(-1);
+                    break;
+                default: break;
+            }
+
+            // Update each player info in the database
+            foreach (Player player in allPlayers)
+            {
+                bool isWinner = (player.index == winner);
+                DatabaseHandler.updateinfo(player.username, isWinner);
+            }
         }
     }
 }
@@ -446,11 +457,46 @@ public class DatabaseHandler
         }
         return false;
     }
-    /*//don't need this yet maybe
-    public void updateinfo(string user)
+    //don't need this yet maybe
+    public static bool updateinfo(string user, bool won)
     {
+        if (OpenConnection())
+        {
+            int wins = 0;
+            int games = 0;
 
-    }*/
+            // Retrieve existing information from given user
+            string query = String.Format("SELECT * from bmdb.main WHERE username = '{0}'", user);
+            MySqlCommand cmd = new MySqlCommand(query, connect);
+
+            // Load existing 'wins' and 'games' values into variables
+            MySqlDataReader reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                wins = reader.GetInt32("wins");
+                games = reader.GetInt32("games");
+            }
+            reader.Close();
+
+            // If this user won the game, increment 'wins',
+            // also increment 'games' either way
+            if (won)
+            {
+                wins = (wins == null) ? 1 : wins + 1;
+            }
+            games = (games == null) ? 1 : games + 1;
+
+            // Update back the new information through query
+            query = String.Format("UPDATE * SET wins='{0}', games='{1}' WHERE username='{2}'", wins, games, user);
+            cmd = new MySqlCommand(query, connect);
+
+            // Check if the update was successful
+            int result = cmd.ExecuteNonQuery();
+            CloseConnection();
+            return result > 0;
+        }
+        return false;
+    }
 
 
     //method checks the database if the user and password are correct
