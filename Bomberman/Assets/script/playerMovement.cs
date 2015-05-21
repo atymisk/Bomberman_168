@@ -18,13 +18,9 @@ public class playerMovement : MonoBehaviour {
 	List<Game.Player> allplayer = Client.game.allPlayers;
 
 	int times;
-	int count = 0;
 	void Start() {
 		rb = GetComponent<Rigidbody>();
 		clientid = Client.getIndex();
-		//Debug.Log ("hi");
-		Debug.Log ("player script line 24: "+clientid);
-		//Debug.Log ("bye");
 	}
 
 	void Update() {
@@ -32,17 +28,12 @@ public class playerMovement : MonoBehaviour {
 		if (Input.GetButtonDown("Fire1") && !active && playerid == clientid && timer >= dropTime) {
 			timer -= dropTime;
 			Client.lazySend("Bomb;" + rb.position[0].ToString() + ";" + rb.position[2].ToString() + ";" + strength.ToString() + ";");
-			clone = Instantiate(bomb, rb.position, Quaternion.identity) as Rigidbody;
-			var theScript = clone.GetComponent<bombLogic>();
-			theScript.active = true;
-			theScript.player = this.gameObject;
 			//Client.lazySend(...)
 		}
 	}
 	
 	void FixedUpdate () {
 
-//		Debug.Log (data);
 
 		if (playerid == clientid && alive) {
 			//client.GetComponent<Client> ().x = rb.position [0];
@@ -58,10 +49,9 @@ public class playerMovement : MonoBehaviour {
 			string xs = rb.position [0].ToString ();
 			string zs = rb.position [2].ToString ();
 			string message = "Player;" + index + ";T;" + xs + ";" + zs + ";";
-			//Debug.Log (message);
 			times++;
 			if (times > 50) {
-				Debug.Log (count);
+				Debug.Log (message);
 				Client.lazySend (message);
 				times = 0;
 			}
@@ -69,18 +59,19 @@ public class playerMovement : MonoBehaviour {
 			string index = playerid.ToString ();
 			string xs = rb.position [0].ToString ();
 			string zs = rb.position [2].ToString ();
-			//Debug.Log ("Player;" + index + ";F;" + xs + ";" + zs + ";");
+			Debug.Log ("Player;" + index + ";F;" + xs + ";" + zs + ";");
 			Client.lazySend ("Player;" + index + ";F;" + xs + ";" + zs + ";");
 			this.gameObject.SetActive (false);
 		} else {
 			rb.useGravity = false;
+
+
+			if (allplayer.Count >= playerid + 1){
+			}
+
 			if (allplayer.Count >= playerid + 1 && allplayer[playerid].active){
-				//float locx = float.Parse (collection[5*playerid + 3]);
-				//float locz = float.Parse (collection[5*playerid + 4]);
 				float locx = allplayer[playerid].x;
 				float locz = allplayer[playerid].z;
-				//Debug.Log (locx);
-				//Debug.Log (locz);
 				transform.position = new Vector3 (locx, .5f, locz);
 			}
 			else {

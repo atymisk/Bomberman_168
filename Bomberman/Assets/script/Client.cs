@@ -12,7 +12,7 @@ public class IP
 	public enum Address { ANTHONY, FAYE, JEFFREY, MYSQL, LOCALHOST };
 	public const string Anthony = "169.234.6.190";
     public const string Faye = "169.234.12.76";
-	public const string Jeffrey = "169.234.22.25";
+	public const string Jeffrey = "169.234.13.110";
 	public const string mySQL = IP.Anthony;
 
 	// Whose IP Address are we using for the server?
@@ -65,16 +65,16 @@ public class Game
 		public float x;
 		public float z;
 		public int playerIndex = -1;
-		public bool active = false;
+		public bool active = true;
 
-		public Player(string username, int x, int z)
+		public Player(string username, float x, float z)
 		{
 			this.x = x;
 			this.z = z;
 			this.username = username;
 		}
 
-		public void setPosition(int x, int z)
+		public void setPosition(float x, float z)
 		{
 			this.x = x;
 			this.z = z;
@@ -127,8 +127,9 @@ public class Game
 	public void addPlayer(string username)
 	{
 		int numberOfPlayers = allPlayers.Count;
-		int x, z;
-
+		float x, z;
+		Debug.Log ("Generating player");
+		Debug.Log(numberOfPlayers);
 		switch (numberOfPlayers)
 		{
 		case 0:
@@ -159,11 +160,14 @@ public class Game
 			return;
 		}
 
-		for (int playerNumber = 1; playerNumber < messageParts.Count; playerNumber+=5)
+		int playerNumber = 0;
+		for (int messageindex = 1; messageindex < messageParts.Count; messageindex+=5)
 		{
-			allPlayers[playerNumber].active = Parser.convertBool(messageParts[playerNumber+1]);
+			allPlayers[playerNumber].active = Parser.convertBool(messageParts[messageindex+1]);
+			Debug.Log(allPlayers[playerNumber].active);
 			allPlayers[playerNumber].setPosition(
-				Convert.ToInt32(messageParts[playerNumber+2]), Convert.ToInt32(messageParts[playerNumber+3]));
+				float.Parse(messageParts[messageindex+2]), float.Parse(messageParts[messageindex+3]));
+			playerNumber++;
 		}
 	}
 }
@@ -296,7 +300,7 @@ public class Client : MonoBehaviour
 			default:
 				ipAddress = ipHostInfo.AddressList[0]; break;
 			}
-
+			ipAddress = ipHostInfo.AddressList[0];
 			// Make the connection
             remoteEP = new IPEndPoint(ipAddress, port);
 
@@ -328,7 +332,7 @@ public class Client : MonoBehaviour
             Receive(recv_so);
             recv_so.receiveDone.WaitOne(1000);
             // Write the response to the console.
-            Debug.Log("Response received : " + recv_so.response);
+            //Debug.Log("Response received : " + recv_so.response);
 			connected = true;
 			SceneEnter();//check the scene once a connection has been established
         }
@@ -614,7 +618,7 @@ public class Client : MonoBehaviour
 		
 		// Begin sending the data to the remote device.
 		client.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallback), send_so);
-		Debug.Log("Sending: " + content + "<EOF>");
+		//Debug.Log("Sending: " + content + "<EOF>");
 		//Send(client, content+"<EOF>", send_so);
 		send_so.sendDone.WaitOne(delay);
 		
