@@ -16,7 +16,9 @@ public class login : MonoBehaviour {
 	{
 		submit ();
 		//Debug.Log(tosend);
-		return tosend;
+		string sendMe = tosend;
+		wipe ();
+		return sendMe;
 	}
 	public void wipe()
 	{

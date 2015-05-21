@@ -9,14 +9,14 @@ using System.Text;
 
 public class IP
 {
-	public enum Address { ANTHONY, FAYE, JEFFREY, SERVER, MYSQL };
+	public enum Address { ANTHONY, FAYE, JEFFREY, MYSQL, LOCALHOST };
 	public const string Anthony = "169.234.6.190";
-	public const string Faye = "169.234.9.207";
+    public const string Faye = "169.234.12.76";
 	public const string Jeffrey = "169.234.22.25";
 	public const string mySQL = IP.Anthony;
 
 	// Whose IP Address are we using for the server?
-	public static Address Server = Address.FAYE;
+    public static Address Server = Address.LOCALHOST;
 }
 
 // State object for receiving data from remote device.
@@ -124,6 +124,34 @@ public class Game
 		allBombs.Add (new Bomb(x, z, strength));
 	}
 
+	public void addPlayer(string username)
+	{
+		int numberOfPlayers = allPlayers.Count;
+		int x, z;
+
+		switch (numberOfPlayers)
+		{
+		case 0:
+			x = -9; z = -9;
+			break;
+		case 1:
+			x = 9; z = 9;
+			break;
+		case 2:
+			x = 9; z = -9;
+			break;
+		case 3:
+			x = -9; z = 9;
+			break;
+		default:
+			x = -9001; z = -9001;
+			break;
+		}
+
+		allPlayers.Add (new Player(username, x, z));
+		allPlayers[numberOfPlayers].playerIndex = numberOfPlayers;
+	}
+
 	public void updatePlayers(List<string> messageParts)
 	{
 		if (messageParts[0] != "Player")
@@ -201,7 +229,8 @@ public class Client : MonoBehaviour
 
 	// Registration & LogIn info #Anthony
 	string registerinfo = "Registering: ";
-    string logininfo = "Attempting Login: ";
+    const string loginHeader = "Attempting Login: ";
+	string logininfo = "";
 	private static string myuser = "";
 	private static int myindex = -1;
 	//need notion of being connected --Anthony
@@ -321,10 +350,10 @@ public class Client : MonoBehaviour
 		// ------------------Anthony------------------------//
 		if (GameObject.Find ("login") != null) 
 		{
-			logininfo += GameObject.Find ("login").GetComponentInChildren<login> ().strsend ();
+			logininfo = loginHeader + GameObject.Find ("login").GetComponentInChildren<login> ().strsend ();
 			specifiedSend(logininfo, 1500);
 			//lazySend(logininfo);
-			if (connected) 
+			if (connected && loggedin) 
 			{
 				//Debug.Log("login sceneenter");
 				Application.LoadLevel ("Lobby");
@@ -410,12 +439,9 @@ public class Client : MonoBehaviour
 		{
 			gameover = true;
 		}
-		else if(content == "Game Start")
+		else if(content.Contains("Game Start"))
 		{
-			//Application.LoadLevel("MultiBomberman");
-			gamestart = true;
-			// Create a new game object, overwriting the previous
-			game = new Game();
+			startGame(content);
 		}
 		
 		//for the lobby
@@ -445,6 +471,19 @@ public class Client : MonoBehaviour
 		}
 	}
 
+	private static void startGame(string content)
+	{
+		List<string> messageParts = Parser.split (content);
+		gamestart = true;
+		// Create a new game object, overwriting the previous
+		game = new Game();
+		// Add the number of players
+		int numberOfPlayers = Convert.ToInt32(messageParts[1]);
+		for (int i = 0; i < numberOfPlayers; i++)
+		{
+			game.addPlayer ("");
+		}
+	}
 
 	private static void loginSuccess(string content)
 	{
@@ -538,7 +577,7 @@ public class Client : MonoBehaviour
         {
             // Retrieve the socket from the state object.
             StateObject so = (StateObject)ar.AsyncState;
-            Socket client = so.workSocket;
+            //Socket client = so.workSocket;
 
             // Complete sending the data to the remote device.
             //int bytesSent = client.EndSend(ar);

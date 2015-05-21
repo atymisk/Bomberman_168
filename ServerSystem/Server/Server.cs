@@ -8,7 +8,7 @@ using MySql.Data.MySqlClient;
 
 public class IP
 {
-    public const string Anthony = "169.234.6.190";
+    public const string Anthony = "169.234.12.50";
     public const string Faye = "169.234.9.207";
     public const string Jeffrey = "169.234.22.25";
     public const string mySQL = IP.Anthony;
@@ -107,16 +107,13 @@ public class Game
         while (allBombs.Count != 0)
         {
             Bomb bomb = allBombs[0];
-            for (int i = 0; i < getplayerCount(); i++)
-            {
-                string x = bomb.x.ToString() + MessageHandler.semicolon;
-                string z = bomb.z.ToString() + MessageHandler.semicolon;
-                string strength = bomb.strength.ToString() + MessageHandler.semicolon;
+            string x = bomb.x.ToString() + MessageHandler.semicolon;
+            string z = bomb.z.ToString() + MessageHandler.semicolon;
+            string strength = bomb.strength.ToString() + MessageHandler.semicolon;
 
-                string package = header + x + z + strength;
+            string package = header + x + z + strength;
 
-                sendToAll(package);
-            }
+            sendToAll(package);
             allBombs.Remove(bomb);
         }
     }
@@ -314,7 +311,7 @@ public class Game
         {
             //start countdown??
             Console.WriteLine("\n-----------------------Game Starting----------------------------\n");
-            AsynchronousSocketListener.sendALL("Game Start");
+            AsynchronousSocketListener.sendALL("Game Start" + MessageHandler.semicolon + allPlayers.Count);
             //Clear the msg buffer/queue
             MessageHandler.clearmessages();
             //GameLoop();
@@ -400,7 +397,7 @@ public class DatabaseHandler
         //server = IP.mySQL;
         //server = "169.234.20.168";
         //server = "70.187.161.177";
-        server = "127.0.0.1";
+        server = IP.mySQL;
         db = "BombermanDB";
         serveruser = "root";
         serverpass = "master";
@@ -1010,7 +1007,7 @@ public class AsynchronousSocketListener
     {
         foreach (Socket s in allClients)
         {
-            directedSend(s,content);//<----s.RemoteEndPoint is correct, but goes nowhere
+            directedSend(s,content);
         }
     }
 
