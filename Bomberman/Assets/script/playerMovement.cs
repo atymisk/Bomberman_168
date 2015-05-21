@@ -42,37 +42,36 @@ public class playerMovement : MonoBehaviour {
 			float moveVertical = Input.GetAxis ("Vertical");
 
 			movement = new Vector3 (moveHorizontal, 0.0f, moveVertical);
-
 			rb.AddForce (movement * speed);
 
 			string index = playerid.ToString ();
 			string xs = rb.position [0].ToString ();
 			string zs = rb.position [2].ToString ();
-			string message = "Player;" + index + ";T;" + xs + ";" + zs + ";";
 			times++;
 			if (times > 50) {
-				Debug.Log (message);
-				Client.lazySend (message);
+				Debug.Log ("Player;" + index + ";T;" + xs + ";" + zs + ";" + rb.velocity.x + ";" + rb.velocity.y + ";");
+				Client.lazySend ("Player;" + index + ";T;" + xs + ";" + zs + ";" + rb.velocity.x + ";" + rb.velocity.y + ";");
 				times = 0;
 			}
 		} else if (clientid == playerid && !alive) {
 			string index = playerid.ToString ();
 			string xs = rb.position [0].ToString ();
 			string zs = rb.position [2].ToString ();
-			Debug.Log ("Player;" + index + ";F;" + xs + ";" + zs + ";");
-			Client.lazySend ("Player;" + index + ";F;" + xs + ";" + zs + ";");
+			Debug.Log ("Player;" + index + ";F;" + xs + ";" + zs + ";" + rb.velocity.x + ";" + rb.velocity.y + ";");
+			Client.lazySend ("Player;" + index + ";F;" + xs + ";" + zs + ";" + rb.velocity.x + ";" + rb.velocity.y + ";");
 			this.gameObject.SetActive (false);
 		} else {
 			rb.useGravity = false;
 
-
-			if (allplayer.Count >= playerid + 1){
-			}
-
 			if (allplayer.Count >= playerid + 1 && allplayer[playerid].active){
 				float locx = allplayer[playerid].x;
 				float locz = allplayer[playerid].z;
+				// Jeffrey this is for the velocity movement on dead reckoning
+				float velx = allplayer[playerid].xv;
+				float velz = allplayer[playerid].zv;
 				transform.position = new Vector3 (locx, .5f, locz);
+				movement = new Vector3 (velx, 0.0f, velz);
+				rb.velocity = (movement * speed);
 			}
 			else {
 				this.gameObject.SetActive (false);

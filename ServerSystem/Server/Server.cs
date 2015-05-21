@@ -8,9 +8,9 @@ using MySql.Data.MySqlClient;
 
 public class IP
 {
-    public const string Anthony = "169.234.2.124";
-    public const string Faye = "169.234.26.221";
-    public const string Jeffrey = "169.234.22.25";
+    public const string Anthony = "169.234.12.50";
+    public const string Faye = "169.234.9.207";
+    public const string Jeffrey = "169.234.13.110";
     public const string mySQL = IP.Anthony;
 }
 
@@ -94,8 +94,11 @@ public class Game
             string deadOrAlive = trueFalse[0].ToString() + MessageHandler.semicolon;
             string x = allPlayers[i].x.ToString() + MessageHandler.semicolon;
             string z = allPlayers[i].z.ToString() + MessageHandler.semicolon;
+            //jeffrey velocity values
+            string xv = allPlayers[i].xv.ToString() + MessageHandler.semicolon;
+            string zv = allPlayers[i].zv.ToString() + MessageHandler.semicolon;
             string footer = i.ToString() + "end" + MessageHandler.semicolon;
-            package += header + deadOrAlive + x + z + footer;
+            package += header + deadOrAlive + x + z + xv + zv+ footer;
         }
         sendToAll(package);
     }
@@ -127,7 +130,7 @@ public class Game
         public int index;//--added by Anthony for lobby logic
         //public Socket clientSocket;
         public Socket clientSocket;
-        public float x, z;
+        public float x, z, xv, zv;
 
         public Player(Socket clientSocket, float x, float z, int index, String username)
         {
@@ -368,29 +371,18 @@ public class Game
             }
             winner = i;
         }
-
-        if (numOfPlayers <= 1) // there is one or fewer player standing, winner?
+        switch (numOfPlayers)
         {
-            switch (numOfPlayers)
-            {
-                case 1: // we have a winner. not sure who it is though.
-                    Console.WriteLine("------------------------Game Over!----------------------------");
-                    Console.WriteLine("Player " + (winner /*+1*/) + " won!");
-                    sendGameOver(winner);
-                    break;
-                case 0: // everybody died lulz
-                    Console.WriteLine("Everybody died! Oh noes!");
-                    sendGameOver(-1);
-                    break;
-                default: break;
-            }
-
-            // Update each player info in the database
-            foreach (Player player in allPlayers)
-            {
-                bool isWinner = (player.index == winner);
-                DatabaseHandler.updateinfo(player.username, isWinner);
-            }
+            case 1: // we have a winner. not sure who it is though.
+                Console.WriteLine("------------------------Game Over!----------------------------");
+                Console.WriteLine("Player " + (winner + 1) + " won!");
+                sendGameOver(winner);
+                break;
+            case 0: // everybody died lulz
+                Console.WriteLine("Everybody died! Oh noes!");
+                sendGameOver(-1);
+                break;
+            default: break;
         }
     }
 }
@@ -457,61 +449,11 @@ public class DatabaseHandler
         }
         return false;
     }
-    //don't need this yet maybe
-    public static bool updateinfo(string user, bool won)
+    /*//don't need this yet maybe
+    public void updateinfo(string user)
     {
-        if (OpenConnection())
-        {
-            int wins = 0;
-            int games = 0;
 
-            // Retrieve existing information from given user
-            string query = String.Format("SELECT * from bmdb.main WHERE username = '{0}'", user);
-            MySqlCommand cmd = new MySqlCommand(query, connect);
-
-            // Load existing 'wins' and 'games' values into variables
-            MySqlDataReader reader = cmd.ExecuteReader();
-            while (reader.Read())
-            {
-                int winsIndex = reader.GetOrdinal("wins");
-                if (!reader.IsDBNull(winsIndex))
-                {
-                    wins = reader.GetInt32("wins");
-                }
-
-                int gamesIndex = reader.GetOrdinal("games");
-                if (!reader.IsDBNull(gamesIndex))
-                {
-                    games = reader.GetInt32("games");
-                }
-            }
-            reader.Close();
-
-            //Console.WriteLine("JUST RETRIEVED DATA, wins={0}, games={1}", wins, games);
-
-            // If this user won the game, increment 'wins',
-            // also increment 'games' either way
-            if (won)
-            {
-                wins++;
-            }
-            games++;
-
-            //Console.WriteLine("BEFORE UPDATING, wins={0}, games={1}", wins, games);
-
-            // Update back the new information through query
-            query = String.Format("UPDATE bmdb.main SET wins={0}, games={1} WHERE username='{2}'", wins, games, user);
-            cmd = new MySqlCommand(query, connect);
-
-            // Check if the update was successful
-            int result = cmd.ExecuteNonQuery();
-            CloseConnection();
-
-            //Console.WriteLine("Result > 0 ?  {0}", (result>0));
-            return result > 0;
-        }
-        return false;
-    }
+    }*/
 
 
     //method checks the database if the user and password are correct
@@ -607,15 +549,15 @@ public class MessageHandler
 
         //check the database with the user and pass
         
-        if (DatabaseHandler.verify(user, pass))
-        {
+        //if (DatabaseHandler.verify(user, pass))
+        //{
             AsynchronousSocketListener.Send(m.client,"Login Success " + user);//need this line for logins to work
             //add player object here?
-        }
-        else
-        {
-            AsynchronousSocketListener.Send(m.client,"Login Failed");
-        }
+        //}
+        //else
+        //{
+        //    AsynchronousSocketListener.Send(m.client,"Login Failed");
+        //}
         //AsynchronousSocketListener.lazySend("Login Success<EOF>");
          
     }
@@ -670,8 +612,12 @@ public class MessageHandler
             string header = m.messageParts[0];
             //string playerNum = m.messageParts[1]; // discarded because Server knows who it came from
             string deadOrAlive = m.messageParts[2];
+            //location values
             float x = Convert.ToSingle(m.messageParts[3]);
             float z = Convert.ToSingle(m.messageParts[4]);
+            //velocity values
+            float xv = Convert.ToSingle(m.messageParts[5]);
+            float zv = Convert.ToSingle(m.messageParts[6]);
             Game game = games[0]; // #hardcoding lyfe
             Game.Player player = game.findPlayer(m.client);
 
@@ -692,6 +638,8 @@ public class MessageHandler
             }
             player.x = x;
             player.z = z;
+            player.xv = xv;
+            player.zv = zv;
             games[0].sendPosition();
         }
         catch (Exception e)

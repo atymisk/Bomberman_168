@@ -10,8 +10,8 @@ using System.Text;
 public class IP
 {
 	public enum Address { ANTHONY, FAYE, JEFFREY, MYSQL, LOCALHOST };
-    public const string Anthony = "169.234.2.124";
-    public const string Faye = "169.234.26.221";
+	public const string Anthony = "169.234.6.190";
+    public const string Faye = "169.234.12.76";
 	public const string Jeffrey = "169.234.13.110";
 	public const string mySQL = IP.Anthony;
 
@@ -64,6 +64,8 @@ public class Game
 		public string username;
 		public float x;
 		public float z;
+		public float xv;
+		public float zv;
 		public int playerIndex = -1;
 		public bool active = true;
 
@@ -74,10 +76,13 @@ public class Game
 			this.username = username;
 		}
 
-		public void setPosition(float x, float z)
+		public void setPosition(float x, float z, float xv, float zv)
 		{
 			this.x = x;
 			this.z = z;
+			//Jeffrey modified to also take and store in velocity for dead reckoning
+			this.xv = xv;
+			this.zv = zv;
 		}
 	}
 
@@ -161,12 +166,12 @@ public class Game
 		}
 
 		int playerNumber = 0;
-		for (int messageindex = 1; messageindex < messageParts.Count; messageindex+=5)
+		for (int messageindex = 1; messageindex < messageParts.Count; messageindex+=7)
 		{
 			allPlayers[playerNumber].active = Parser.convertBool(messageParts[messageindex+1]);
 			Debug.Log(allPlayers[playerNumber].active);
 			allPlayers[playerNumber].setPosition(
-				float.Parse(messageParts[messageindex+2]), float.Parse(messageParts[messageindex+3]));
+				float.Parse(messageParts[messageindex+2]), float.Parse(messageParts[messageindex+3]), float.Parse(messageParts[messageindex+4]), float.Parse(messageParts[messageindex+5]));
 			playerNumber++;
 		}
 	}
@@ -300,7 +305,7 @@ public class Client : MonoBehaviour
 			default:
 				ipAddress = ipHostInfo.AddressList[0]; break;
 			}
-
+			ipAddress = ipHostInfo.AddressList[0];
 			// Make the connection
             remoteEP = new IPEndPoint(ipAddress, port);
 
