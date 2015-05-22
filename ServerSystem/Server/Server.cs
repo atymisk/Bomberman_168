@@ -14,6 +14,12 @@ public class IP
     public const string mySQL = IP.Anthony;
 }
 
+public class Settings
+{
+    // Turn off database here!
+    public static bool database = false;
+}
+
 // State object for reading client data asynchronously
 public class StateObject
 {
@@ -242,25 +248,20 @@ public class Game
 
     public void addPlayer(Socket ip, string user)
     {
-        //grab one of these default locations
-        //9,9
-        //9,-9
-        //-9,-9
-        //-9,9
         float x = 0; float z = 0;//filler for now
         switch (nextindex)
         {
             case 0:
-                x = -9; z = -9;
+                x = -5; z = -7;
                 break;
             case 1:
-                x = 9; z = 9;
+                x = 5; z = 7;
                 break;
             case 2:
-                x = 9; z = -9;
+                x = 5; z = -7;
                 break;
             case 3:
-                x = -9; z = 9;
+                x = -5; z = 7;
                 break;
             default:
                 break;
@@ -408,6 +409,11 @@ public class DatabaseHandler
 
     public DatabaseHandler()
     {
+        if (!Settings.database)
+        {
+            return;
+        }
+
         //server = IP.mySQL;
         //server = "169.234.20.168";
         //server = "70.187.161.177";
@@ -421,6 +427,11 @@ public class DatabaseHandler
     }
     private static bool OpenConnection()
     {
+        if (!Settings.database)
+        {
+            return true;
+        }
+
         try
         {
             connect.Open();
@@ -435,6 +446,11 @@ public class DatabaseHandler
     }
     private static bool CloseConnection()
     {
+        if (!Settings.database)
+        {
+            return true;
+        }
+
         try
         {
             connect.Close();
@@ -448,6 +464,11 @@ public class DatabaseHandler
     }
     public static bool adduser(string user, string pass)
     {
+        if (!Settings.database)
+        {
+            return true;
+        }
+
         if (OpenConnection())
         {
             string query = "INSERT INTO bmdb.main (username, pass) VALUES (@username,@password)";
@@ -463,6 +484,11 @@ public class DatabaseHandler
     //don't need this yet maybe
     public static bool updateinfo(string user, bool won)
     {
+        if (!Settings.database)
+        {
+            return true;
+        }
+
         if (OpenConnection())
         {
             int wins = 0;
@@ -521,6 +547,11 @@ public class DatabaseHandler
     //need to update once its correct so no more than one person can long on at once
     public static bool verify(string user, string pass)
     {
+        if (!Settings.database)
+        {
+            return true;
+        }
+
         if (OpenConnection())
         {
             string[] list = new string[2];

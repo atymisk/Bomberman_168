@@ -253,6 +253,11 @@ public class Client : MonoBehaviour
 
 	#region Unity Stuff: Start() & FixedUpdate()
 
+    void Awake()
+    {
+        Application.runInBackground = true;
+    }
+
 	//Assuming that the method is Always called at the start of a scene since its not static
 	void Start()
 	{
