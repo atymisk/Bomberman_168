@@ -11,7 +11,7 @@ public class playerMovement : MonoBehaviour {
 	public int dropTime;
 	public int strength;
 	public int playerid, clientid;
-	public GameObject client;
+	public Client client;
 	public bool active = false;
 	public bool alive = true;
 	string mydata;
@@ -27,7 +27,7 @@ public class playerMovement : MonoBehaviour {
 
 		if (Input.GetButtonDown("Fire1") && !active && playerid == clientid && timer >= dropTime) {
 			timer -= dropTime;
-			Client.lazySend("Bomb;" + rb.position[0].ToString() + ";" + rb.position[2].ToString() + ";" + strength.ToString() + ";");
+			Client.lazySend("Bomb;" + rb.position[0].ToString() + ";" + rb.position[2].ToString() + ";" + strength.ToString() + ";"+client.getlobbyname()+";");
 			//Client.lazySend(...)
 		}
 	}
@@ -49,16 +49,16 @@ public class playerMovement : MonoBehaviour {
 			string zs = rb.position [2].ToString ();
 			times++;
 			if (times > 10) {
-				Debug.Log ("Player;" + index + ";T;" + xs + ";" + zs + ";" + rb.velocity.x + ";" + rb.velocity.y + ";");
-				Client.lazySend ("Player;" + index + ";T;" + xs + ";" + zs + ";" + rb.velocity.x + ";" + rb.velocity.y + ";");
+				Debug.Log ("Player;" + index + ";T;" + xs + ";" + zs + ";" + rb.velocity.x + ";" + rb.velocity.y + ";"+client.getlobbyname()+";");
+				Client.lazySend ("Player;" + index + ";T;" + xs + ";" + zs + ";" + rb.velocity.x + ";" + rb.velocity.y + ";"+client.getlobbyname()+";");
 				times = 0;
 			}
 		} else if (clientid == playerid && !alive) {
 			string index = playerid.ToString ();
 			string xs = rb.position [0].ToString ();
 			string zs = rb.position [2].ToString ();
-			Debug.Log ("Player;" + index + ";F;" + xs + ";" + zs + ";" + rb.velocity.x + ";" + rb.velocity.y + ";");
-			Client.lazySend ("Player;" + index + ";F;" + xs + ";" + zs + ";" + rb.velocity.x + ";" + rb.velocity.y + ";");
+			Debug.Log ("Player;" + index + ";F;" + xs + ";" + zs + ";" + rb.velocity.x + ";" + rb.velocity.y + ";"+client.getlobbyname()+";");
+			Client.lazySend ("Player;" + index + ";F;" + xs + ";" + zs + ";" + rb.velocity.x + ";" + rb.velocity.y + ";"+client.getlobbyname()+";");
 			this.gameObject.SetActive (false);
 		} else {
 			rb.useGravity = false;

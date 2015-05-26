@@ -11,13 +11,14 @@ public class lobby : MonoBehaviour
 	public Client c;
 	public static bool ready = false;
 	public static bool loaded = false;
-	// Use this for initialization
-	public static void Start () //happens once and only once
+	private string lobbyname = "";
+	//not called automatically
+	public static void Start ()
 	{
-		lists[0] = "...";
-		lists[1] = "...";
-		lists[2] = "...";
-		lists[3] = "...";
+		lists[0] = "...Awaiting Player";
+		lists[1] = "...Awaiting Player";
+		lists[2] = "...Awaiting Player";
+		lists[3] = "...Awaiting Player";
 	}
 
 	//method reacts to the button press, will send a message to the server say it's ready
@@ -26,13 +27,15 @@ public class lobby : MonoBehaviour
 	{
 		ready = !ready;
 		Debug.Log((ready? "ready" : "not ready"));
+		lobbyname = c.getlobbyname();
 		if(ready)
 		{
-			c.sendmsg("This player is ready " + Client.getIndex());
+			c.sendmsg("This player is ready " + Client.getIndex() + "|" +lobbyname);
+			//ready = !ready;
 		}
 		else
 		{
-			c.sendmsg("This player is not ready "+Client.getIndex ());
+			c.sendmsg("This player is not ready "+Client.getIndex () + "|" + lobbyname);
 		}
 	}
 	public static void readyupdates(int index)
@@ -57,7 +60,7 @@ public class lobby : MonoBehaviour
 	public static void setup(string p,int index)
 	{
 		lists[index] = p;
-		Debug.Log("Lobby Script Line 52: "+lists[index]);
+		//Debug.Log("Lobby Script Line 62: "+lists[index]);
 	}
 	public void updatetxt()
 	{
@@ -67,7 +70,10 @@ public class lobby : MonoBehaviour
 		ptxt[3].text = lists[3];
 		//Debug.Log(lists[0]);
 	}
-
+	public void leavelobby()
+	{
+		//tell server, remove me from this lobby
+	}
 	void FixedUpdate () 
 	{
 		updatetxt();

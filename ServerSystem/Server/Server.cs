@@ -9,8 +9,9 @@ using MySql.Data.MySqlClient;
 public class IP
 {
     public const string Anthony = "169.234.2.124";
-    public const string Faye = "169.234.26.221";
+    public const string Faye = "169.234.9.207";
     public const string Jeffrey = "169.234.22.25";
+    public const string defaultIP4Anthony = "127.0.0.1";
     public const string mySQL = IP.Anthony;
 }
 
@@ -48,6 +49,7 @@ public class Game
     public int nextindex;
     public List<Bomb> allBombs;
     private int readycount;
+    private bool full;
 
     public Game()
     {
@@ -55,8 +57,13 @@ public class Game
         allBombs = new List<Bomb>();
         nextindex = 0;//starting position, when one player is added: next position is 1
         readycount = 0;
+        full = false;
     }
-
+    public bool isFull()
+    {
+        full = (allPlayers.Count == 4);
+        return full;
+    }
     // After lobby details are finished and a game starts...
     public void GameLoop()
     {
@@ -79,14 +86,11 @@ public class Game
 
     private void sendToAll(string package)
     {
-        AsynchronousSocketListener.sendALL(package);
-        /*foreach (Player player in allPlayers)
+        //AsynchronousSocketListener.sendALL(package);
+        for (int i = 0; i < allPlayers.Count && allPlayers[i] != null; i++)
         {
-            if (player != null)
-            {
-                AsynchronousSocketListener.directedSend(player.clientSocket, package);
-            }
-        }*/
+            AsynchronousSocketListener.directedSend(allPlayers[i].clientSocket, package);
+        }
     }
 
     public void sendPosition() // Player;0;T;9;8;0end;1;T;8;9;1end;2;T;9;7;2end;3;F;9;6;3end;
@@ -222,17 +226,18 @@ public class Game
 
     public void lobby()//whenever theres anyone
     {
-        for (int i = 0; i < getplayerCount(); i++)
+        for (int i = 0; i < allPlayers.Count && i < 4; i++)
         {
+            string package = "P" + (i + 1) + "L:...";//"P1L:..."
             //send to all
-            if (allPlayers[i] == null)
-            {
-                break;
-            }
-            string package = "P" + (i + 1) + "L: " + allPlayers[i].username
+            if (allPlayers[i] != null)
+            {   
+                package = "P" + (i + 1) + "L: " + allPlayers[i].username
                 + "|" + allPlayers[i].x + "|" + allPlayers[i].z;
-            AsynchronousSocketListener.sendALL(package);
-            //sendToAll(package);
+            }
+            //AsynchronousSocketListener.sendALL(package);
+            
+            sendToAll(package);
         }
     }
 
@@ -266,17 +271,17 @@ public class Game
             default:
                 break;
         }
-        addPlayer(ip, x, z, user);//-1 for now
+        addPlayer(ip, x, z, user);
     }
 
     public void addPlayer(Socket ip, float x, float z, string user)
     {
-        if (nextindex != 4)//no more after position 3
+        if (nextindex < 4)//no more after position 3
         {
             allPlayers.Add(new Player(ip, x, z, nextindex, user));
             //Console.WriteLine(user);
             nextindex++;
-            lobby();//have the server send player info back to all clients
+            //lobby();//have the server send player info back to all clients
             //return nextindex - 1;//send index to the client?
         }
     }
@@ -291,23 +296,19 @@ public class Game
     }
     public void playerready(int index)
     {
-        getPlayer(index).ready();
+        Player p = getPlayer(index);
+        p.ready();
         readycount++;
         //send message to all players of who's ready
-        for (int i = 0; i < getplayerCount() && allPlayers[i] != null; i++)
-        {
-            AsynchronousSocketListener.Send(getPlayer(i).clientSocket,"P" + (index+1) + "R: ready");
-        }
+        sendToAll("P" + (index + 1) + "R: ready");
         checkready();
     }
     public void playerNotready(int index)
     {
-        getPlayer(index).inLobby();
+        Player p = getPlayer(index);
+        p.inLobby();
         readycount = (readycount == 0 ? 0 : readycount-1) ;
-        for (int i = 0; i < getplayerCount() && allPlayers[i] != null; i++)
-        {
-            AsynchronousSocketListener.Send(getPlayer(i).clientSocket, "P" + (index + 1) + "R: not ready");
-        }
+        sendToAll("P" + (index + 1) + "R: not ready");
     }
     public void checkready()
     {
@@ -403,7 +404,6 @@ public class DatabaseHandler
 {
     private static MySqlConnection connect;
     private string server;
-    private string db;
     private string serveruser;
     private string serverpass;
 
@@ -417,8 +417,7 @@ public class DatabaseHandler
         //server = IP.mySQL;
         //server = "169.234.20.168";
         //server = "70.187.161.177";
-        server = IP.mySQL;
-        db = "BombermanDB";
+        server = IP.defaultIP4Anthony;
         serveruser = "root";
         serverpass = "master";
         string connectionstring = "SERVER=" + server + ";PORT = 3306;"/* DATABASE=" + db + ";"*/ + "user id="
@@ -579,8 +578,9 @@ public class MessageHandler
     // Currently all un-parsed messages
     public static List<Message> allMessages = new List<Message>();
 
-    public static List<Game> games = new List<Game>();
-    public static int count = 0;//every 4, create/add a new Game object
+    //public static List<Game> games = new List<Game>();
+    public static Dictionary<string, Game> games = new Dictionary<string, Game>();
+    //public static int count = 0;//every 4, create/add a new Game object
 
     public static string[] EOF = new string[] { "<EOF>" };
     public static char semicolon = ';';
@@ -627,6 +627,7 @@ public class MessageHandler
     {
         //parse the string for user and pass
         //Attempting Login: username|password<EOF>
+        Console.WriteLine("Trying to work");
         string user = "";
         string pass = "";
         string msg = m.message.Substring(18);//username|password<EOF>
@@ -674,29 +675,30 @@ public class MessageHandler
         }
     }
 
-    private static void awaitingGame(Message m)
+    private static void awaitingGame(Message m)//"Awaiting Game "+ username + "|" + lobbyname
     {
         //move the game state to lobby
         //have the game add the player who sent the msg
         //need the username and the ip at minimum, need to probably make a list
         //of some sort of client object with ip/socket and username
         //game will send messages about the other players within the same lobby
+        string username="";
+        string lobbyname="";
+
         m.message = m.message.Substring(14);
-        if (games[games.Count - 1].playerExists(m.message))
+        int index = m.message.IndexOf("|");
+        username = m.message.Substring(0,index);
+        lobbyname = m.message.Substring(index + 1);
+        Console.WriteLine("LobbyName: " + lobbyname);
+      /*  if (games[lobbyname].playerExists(username))
         {
-            games[games.Count - 1].refresh();
-        }
-        //IPAddress.Parse(((IPEndPoint)m.client.RemoteEndPoint).Address.ToString());
-        games[games.Count - 1].addPlayer(m.client, m.message); //.Substring(0, m.message.IndexOf("<")));
-        count++;
-        if (count % 4 == 0)//reaches 4 players
-        {
-            games.Add(new Game());
-            count = 0;
-        }
+            games[lobbyname].refresh();
+            return;
+        }*/
+        games[lobbyname].lobby();
     }
     //static bool started = false; // DELETE
-    private static void updatePlayerLocation(Message m) // for player location: Player;index;T/F;x;z;
+    private static void updatePlayerLocation(Message m) // for player location: Player;index;T/F;x;z;xvel;zvel;lobbyname
     {
         try
         {
@@ -706,10 +708,14 @@ public class MessageHandler
             //location values
             float x = Convert.ToSingle(m.messageParts[3]);
             float z = Convert.ToSingle(m.messageParts[4]);
+            
             //velocity values
             float xv = Convert.ToSingle(m.messageParts[5]);
             float zv = Convert.ToSingle(m.messageParts[6]);
-            Game game = games[0]; // #hardcoding lyfe
+
+            string lobbyname = m.messageParts[7];
+            Game game = games[lobbyname]; // #hardcoding lyfe
+
             Game.Player player = game.findPlayer(m.client);
 
             if (header != "Player")
@@ -728,21 +734,21 @@ public class MessageHandler
                 default: return;
             }
             player.x = x;
-            player.z = z;
+            player.z = z;           
             player.xv = xv;
             player.zv = zv;
-            games[0].sendPosition();
+            games[lobbyname].sendPosition();
+
+         //   games[0].sendPosition();
         }
         catch (Exception e)
         {
             Console.WriteLine(e.ToString());
             return;
         }
-        /*if (started == false) // DELETE
-        { games[0].GameLoop(); started = true; }*/
     }
 
-    private static void bombProposal(Message m) // for bomb proposal: Bomb;x;z;strength;
+    private static void bombProposal(Message m) // for bomb proposal: Bomb;x;z;strength;lobbyname
     {
         try
         {
@@ -750,7 +756,8 @@ public class MessageHandler
             float x = Convert.ToSingle(m.messageParts[1]);
             float z = Convert.ToSingle(m.messageParts[2]);
             int strength = Convert.ToInt32(m.messageParts[3]); // might break
-            Game game = games[0]; // #hardcoding lyfe
+            string lobbyname = m.messageParts[4];
+            Game game = games[lobbyname]; // #hardcoding lyfe
 
             if (header != "Bomb")
             {
@@ -769,20 +776,82 @@ public class MessageHandler
         }
     }
 
+    private static void findgame(Message m)//"Find game: " + lobbyname
+    {
+        string lobbyname = m.message.Substring(11);
+        Console.WriteLine("Trying to find game with name ... " + lobbyname);
+        if (games.ContainsKey(lobbyname))
+        {
+            AsynchronousSocketListener.Send(m.client, "Game Found");
+        }
+        else
+        {
+            AsynchronousSocketListener.Send(m.client, "Game DNE");
+        }
+    }
+    private static void makegame(Message m)//"New Game " + lobbyname + "|" + username
+    {
+        m.message = m.message.Substring(9);
+        Console.WriteLine("\nmessage after substring " + m.message);
+        int index = m.message.IndexOf("|");
+        string lobbyname = m.message.Substring(0,index);
+        string username = m.message.Substring(index + 1);
+
+        if (games.ContainsKey(lobbyname))
+        {
+            AsynchronousSocketListener.Send(m.client, "Game Exists Already");
+        }
+        else
+        {
+            //create the lobby and add this player to it
+            games.Add(lobbyname,new Game());
+            games[lobbyname].addPlayer(m.client, username);
+            AsynchronousSocketListener.Send(m.client, "Game Created " + lobbyname);
+        }
+    }
+    private static void joingame(Message m)//"Joining make|anthony"
+    {
+        m.message = m.message.Substring(8);
+        Console.WriteLine("\n'"+m.message+"'");//make|anthony
+        int index = m.message.IndexOf("|");
+        Console.WriteLine(index);
+        string lobbyname = m.message.Substring(0,index);
+        string username = m.message.Substring(index + 1);
+        Console.WriteLine("'"+lobbyname+"'");
+        if (games[lobbyname].isFull())
+        {
+            AsynchronousSocketListener.Send(m.client, "Game FULL");
+        }
+        else
+        {
+            games[lobbyname].addPlayer(m.client, username);
+            AsynchronousSocketListener.Send(m.client, "Join Approved " + lobbyname);
+        }
+    }
+    private static void disconnectrequest(Message m)
+    {
+
+    }
     /*private static void bombACK(Message m) // for ACKing bomb: ACK;B;10;20;[strength];
     {
 
     }*/
 
-    private static void playerReady(Message m)
+    private static void playerReady(Message m)//"This player is ready " + playerindex + "|" + lobbyname
     {
-        int index = int.Parse(m.message.Substring(m.message.Length - 1));
-        games[games.Count - 1].playerready(index);
+        m.message = m.message.Substring(21);
+        int i = m.message.IndexOf("|");
+        int index = int.Parse(m.message.Substring(0,i));
+        string lobbyname = m.message.Substring(i + 1);
+        games[lobbyname].playerready(index);
     }
-    private static void playerisnotready(Message m)
+    private static void playerisnotready(Message m)//"This player is not ready " + playerindex + "|" + lobbyname
     {
-        int index = int.Parse(m.message.Substring(m.message.Length - 1));
-        games[games.Count - 1].playerNotready(index);
+        m.message = m.message.Substring(25);
+        int i = m.message.IndexOf("|");
+        int index = int.Parse(m.message.Substring(0, i));
+        string lobbyname = m.message.Substring(i + 1);
+        games[lobbyname].playerNotready(index);
     }
 
     private static void cleanEOF(Message m)
@@ -802,7 +871,7 @@ public class MessageHandler
     // Process/parse all the messages received
     public static void processMessages()
     {
-        games.Add(new Game());//hopefully this is only called once when the thread starts
+        //games.Add(new Game());//hopefully this is only called once when the thread starts
         Console.WriteLine("A new game has been added. If you are seeing me for the second time, something went wrong.");
         while (true)
         {
@@ -838,7 +907,7 @@ public class MessageHandler
                         {
                             attemptingLogin(m);
                         }
-                        else if (m.message.Contains("Awaiting Game"))//Awaiting Game username<EOF>
+                        else if (m.message.Contains("Awaiting Game"))
                         {
                             awaitingGame(m);
                         }
@@ -860,6 +929,22 @@ public class MessageHandler
                             {
                                 bombACK(m);
                             }*/
+                        }
+                        else if (m.message.Contains("Disconnect Me "))
+                        {
+                            
+                        }
+                        else if (m.message.Contains("Find game: "))
+                        {
+                            findgame(m);
+                        }
+                        else if (m.message.Contains("New Game "))
+                        {
+                            makegame(m);
+                        }
+                        else if (m.message.Contains("Joining "))
+                        {
+                            joingame(m);
                         }
                         else if (m.message.Contains("Registering: "))//Registering: username|password<EOF>
                         {
@@ -1109,6 +1194,11 @@ public class AsynchronousSocketListener
         {
             directedSend(s,content);
         }
+    }
+
+    public static void disconnectClient(Socket c)
+    {
+
     }
 
     public static int Main(String[] args)

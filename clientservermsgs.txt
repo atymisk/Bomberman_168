@@ -1,0 +1,53 @@
+Client Sends : Server responds
+**change the sendall to be game specific
+//-------------------------------------------------------------------------------------------------
+Game Select:
+	"Find game " + gamename	
+		->Game Found
+		->Game DNE
+		->Game FULL
+
+	"New Game " + gamename
+		->"Game exists already"
+		->"Game Created " + lobbyname
+			->(move user to the lobby and save the lobby name in the client script)
+
+	"Joining "+ gamename + "|" + username
+		->"Join Approved " + lobbyname
+		->(move user to lobby and save the lobby name in the client script)
+//--------------------------------------------------------------------------------------------------
+Lobby:
+	"Awaiting Game " + myuser	>>change to>>	"Awaiting Game" + lobbyname + "|" + myuser
+		->"P" + (i+1) + "L: " ....("P1L: username|x|z")
+	
+	"This player is ready " + index	>>change to>>	"This player is ready " + index + "|" + lobbyname
+		->"P1R: ready"
+	
+	"This player it not ready " + index >>change to>> "This player is not ready " + index + "|" + lobbyname
+		->"P1R: not ready"
+	"Remove me " + index
+		->remove from game lobby and call lobby to refresh()
+//--------------------------------------------------------------------------------------------------	
+Login:
+	"Attempting Login: " + username +"|" + password
+		->"Login Success " + user
+		->"Login Failed"
+
+//--------------------------------------------------------------------------------------------------
+Register:
+	"Registering: " + username + "|" + password
+		->"Registered " + user
+		->"Invalid Registry"
+
+//--------------------------------------------------------------------------------------------------
+Disconnection:
+	//after login and in game select
+	"Disconnect Me " + username
+		->(Client closes socket and server removes the connection)
+			//in detail in the client script
+			client.Shutdown(SocketShutdown.both);
+			client.Close();
+
+//--------------------------------------------------------------------------------------------------
+Game:
+	**game messages need to be sent using the lobbyname now for it to work**

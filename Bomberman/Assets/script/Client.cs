@@ -10,7 +10,7 @@ using System.Text;
 public class IP
 {
 	public enum Address { ANTHONY, FAYE, JEFFREY, MYSQL, LOCALHOST };
-	public const string Anthony = "169.234.6.190";
+	public const string Anthony = "169.234.2.124";
     public const string Faye = "169.234.12.76";
 	public const string Jeffrey = "169.234.13.110";
 	public const string mySQL = IP.Anthony;
@@ -241,6 +241,7 @@ public class Client : MonoBehaviour
     const string loginHeader = "Attempting Login: ";
 	string logininfo = "";
 	private static string myuser = "";
+	private static string lobbyname = "";
 	private static int myindex = -1;
 	//need notion of being connected --Anthony
 	public static bool connected = false;
@@ -249,7 +250,7 @@ public class Client : MonoBehaviour
 	private static bool loggedin = false;
 	private static bool gamestart = false;
 	private static bool gameover = false;
-
+	private static bool createdorjoined = false;
 
 	#region Unity Stuff: Start() & FixedUpdate()
 
@@ -271,18 +272,21 @@ public class Client : MonoBehaviour
 	//using this to send and build messages given by player object
 	void FixedUpdate()
 	{
+//		Debug.Log(createdorjoined);
+		if(createdorjoined || gameover)
+		{
+			lobby.ready = false;
+			Debug.Log("Go To Lobby");
+			gameover = !gameover;
+			createdorjoined = false;
+			Application.LoadLevel("Lobby");
+		}
 		if(gamestart)
 		{
 			gamestart = false;
 			Application.LoadLevel("Bomberman");//<-----Whatever scene that needs to be loaded
 		}
-		if(gameover)
-		{
-			gameover = !gameover;
-			Application.LoadLevel("Lobby");
-		}
 	}
-
 	#endregion
 
 	#region Connecting & Log-In
@@ -292,6 +296,10 @@ public class Client : MonoBehaviour
     public void connecting()
     {
         // Connect to a remote device.
+		if(connected)//prevent trying to connect twice
+		{
+			return;
+		}
         try
         {
             // Establish the remote endpoint for the socket.
@@ -310,7 +318,7 @@ public class Client : MonoBehaviour
 			default:
 				ipAddress = ipHostInfo.AddressList[0]; break;
 			}
-			ipAddress = ipHostInfo.AddressList[0];
+			//ipAddress = ipHostInfo.AddressList[0];
 			// Make the connection
             remoteEP = new IPEndPoint(ipAddress, port);
 
@@ -365,22 +373,22 @@ public class Client : MonoBehaviour
 		if (GameObject.Find ("login") != null) 
 		{
 			logininfo = loginHeader + GameObject.Find ("login").GetComponentInChildren<login> ().strsend ();
-			specifiedSend(logininfo, 1500);
+			specifiedSend(logininfo, 1000);
 			//lazySend(logininfo);
 			if (connected && loggedin) 
 			{
 				//Debug.Log("login sceneenter");
-				Application.LoadLevel ("Lobby");
+				Application.LoadLevel ("GameSelect");
 			}
 		} 
 		else if (GameObject.Find ("lobby") != null) 
 		{
 			//contact server and tell it it's in the lobby
-			Debug.Log("lobby sceneenter");
-			lazySend ("Awaiting Game " + myuser);
+			//Debug.Log("lobby sceneenter");
+			lazySend ("Awaiting Game " + myuser + "|" + lobbyname);
 			
 			//Debug.Log("Client.cs lobbymsg: "+myuser);
-		} 
+		}
 		else if (GameObject.Find ("reg") != null) 
 		{
 			//Debug.Log("Register page");
@@ -457,8 +465,28 @@ public class Client : MonoBehaviour
 		{
 			startGame(content);
 		}
-		
+
+		else if(content.Contains("Game Created "))
+		{
+			creatinggame(content);
+		}
+		else if(content.Contains("Join Approved"))
+		{
+			joining(content);
+		}
+		else if(content == "Game Exists Already" || content == "Game DNE" || content == "Game FULL")
+		{
+			notfoundfullexists();
+		}
+		else if(content == "Game Found")
+		{
+			gamefound(content);
+		}
 		//for the lobby
+		else if(content.Contains("P2L:...")||content.Contains("P1L:...")||content.Contains("P3L:...")||content.Contains("P4L:..."))
+		{
+			lobbyBUpdate(content);
+		}
 		else if(content.Contains("P2L: ")||content.Contains("P1L: ")||content.Contains("P3L: ")||content.Contains("P4L: "))
 		{
 			lobbyUpdate(content);
@@ -471,6 +499,8 @@ public class Client : MonoBehaviour
 		{
 			lobbyUpdateNotReady(content);
 		}
+
+
 		else if(content.Contains("Login Failed"))
 		{
 			loginFailed();
@@ -501,7 +531,7 @@ public class Client : MonoBehaviour
 
 	private static void loginSuccess(string content)
 	{
-		Debug.Log("Login Success");
+		//Debug.Log("Login Success");
 		connected = true;
 		//Debug.Log(content);
 		content = content.Substring(14);//username<EOF>
@@ -530,12 +560,14 @@ public class Client : MonoBehaviour
 		registered = false;
 		connected = false;
 	}
-	
+	private static void lobbyBUpdate(string content)
+	{
+		int ind = int.Parse(content.Substring(1,1));//get the player number from the msg
+		ind--;
+		lobby.setup("...",ind);
+	}
 	private static void lobbyUpdate(string content)
 	{
-		//Debug.Log ("Client.cs: Player is in the Lobby");
-		//Debug.Log("Line 254 "+content);
-		//Debug.Log("Line 255 "+content.Substring(1,1));
 		int ind = int.Parse(content.Substring(1,1));//get the player number from the msg
 		ind--;
 		string msg = content.Substring(5);//username|x|y<EOF>
@@ -570,7 +602,33 @@ public class Client : MonoBehaviour
 		Debug.Log("Client.cs not ready: " + ind);
 		lobby.notreadyupdate(ind);
 	}
-	
+	private static void gamefound(string content)
+	{
+		//11
+		//lobbyname = content.Substring(11);//get the lobbyname
+		//Debug.Log("FOUND " + lobbyname);
+		gameselect.gameexists();
+		Debug.Log("Game FOUND");
+	}
+	private static void notfoundfullexists()
+	{
+		gameselect.showpop();
+	}
+	private static void creatinggame(string content)
+	{
+		Debug.Log("createdorjoined " + createdorjoined);
+		createdorjoined = true;
+		Debug.Log("createdorjoined " + createdorjoined);
+		lobbyname = content.Substring(13);//get the lobbyname
+		Debug.Log("CREATED " + lobbyname);
+	}
+	private static void joining(string content)
+	{
+		//14
+		createdorjoined = true;
+		lobbyname = content.Substring(14);//get the lobbyname
+		Debug.Log("JOINED " + lobbyname);
+	}
 	#endregion
 
 	#region Sending Methods
@@ -608,6 +666,11 @@ public class Client : MonoBehaviour
 
 	public static void lazySend(String content)
 	{
+		if(!connected)
+		{
+			Debug.Log("Not Connected!");
+			return;
+		}
 		// Convert the string data to byte data using ASCII encoding.
 		byte[] byteData = Encoding.ASCII.GetBytes(content+"<EOF>");
 		
@@ -745,7 +808,21 @@ public class Client : MonoBehaviour
 	{
 		return myindex;
 	}
-
+	public string getlobbyname()
+	{
+		return lobbyname;
+	}
 	#endregion
-	  
+
+	#region Disconnecting
+	public static void DisconnectMe()//untested
+	{
+		if(connected)
+		{
+			lazySend("Disconenct Me " + myuser);
+			client.Shutdown(SocketShutdown.Both);
+			client.Close();
+		}
+	}
+	#endregion
 }
