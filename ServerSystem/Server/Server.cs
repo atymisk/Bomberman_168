@@ -216,10 +216,13 @@ public class Game
 
         if (p == null)
         {return;}
-        Console.WriteLine("Player: " + user + "found, now removing");
+        Console.WriteLine("Player: " + user + " found, now removing");
         p.status = Player.Status.DEAD;
-        if (this.status == Game.Status.PLAYING)
-        {checkGameStatus();}
+       /* if (this.status == Game.Status.PLAYING)
+        {
+            checkGameStatus();
+            lobby();
+        }*/
 
         allPlayers.Remove(p);//check the gameover scenario
         lobby();
@@ -311,7 +314,8 @@ public class Game
         {
             Console.WriteLine("\n-----------------------Game Starting----------------------------\n");
             this.status = Game.Status.PLAYING;
-            AsynchronousSocketListener.sendALL("Game Start" + MessageHandler.semicolon + allPlayers.Count);
+            //AsynchronousSocketListener.sendALL("Game Start" + MessageHandler.semicolon + allPlayers.Count);
+            sendToAll("Game Start" + MessageHandler.semicolon + allPlayers.Count);
             MessageHandler.clearmessages();
         }
     }
@@ -349,6 +353,7 @@ public class Game
         }
         sendToAll(package);
         status = Status.ENDED;
+        readycount = 0;
     }
 
     public void checkGameStatus()
@@ -382,7 +387,7 @@ public class Game
             }
 
             // Update each player info in the database
-            foreach (Player player in allPlayers)
+            foreach(Player player in allPlayers)
             {
                 bool isWinner = (player.index == winner);
                 DatabaseHandler.updateinfo(player.username, isWinner);

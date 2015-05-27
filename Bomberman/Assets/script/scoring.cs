@@ -10,28 +10,35 @@ public class scoring : MonoBehaviour {
 	Text texty;
 	string data;
 	List<Game.Player> allplayer = Client.game.allPlayers;
-
+	int index = -1;
 
 	void Start () {
 		texty = words.GetComponent<Text> ();
 	}
 	//public Client client;
-	void FixedUpdate () {
+	void FixedUpdate () 
+	{
 		texty.text = "";
-		if (1 <= allplayer.Count){
-			if (allplayer[0].active) {
+		if (1 <= allplayer.Count)
+		{
+			if (allplayer[0].active) 
+			{
 				texty.text = "Baller -        Pro\n";
 			}
 			else {
-				texty.text = "Baller -        Not Pro\n";
+				//texty.text = "Baller -        Not Pro\n";
+				texty.text = "\n";
 			}
 		}
-		if (2 <= allplayer.Count){
-			if (allplayer[1].active) {
+		if (2 <= allplayer.Count)
+		{
+			if (allplayer[1].active) 
+			{
 				texty.text += "Ballistic -     Pro\n";
 			}
 			else {
-				texty.text += "Ballistic -     Not Pro\n";
+				//texty.text += "Ballistic -     Not Pro\n";
+				texty.text += "\n";
 			}
 		}
 		if (3 <= allplayer.Count){
@@ -39,7 +46,8 @@ public class scoring : MonoBehaviour {
 				texty.text += "Ballerina -   Pro\n";
 			}
 			else {
-				texty.text += "Ballerina -   Not Pro\n";
+				//texty.text += "Ballerina -   Not Pro\n";
+				texty.text += "\n";
 			}
 		}
 		if (4 <= allplayer.Count){
@@ -47,7 +55,8 @@ public class scoring : MonoBehaviour {
 				texty.text += "Balltimore - Pro\n";
 			}
 			else {
-				texty.text += "Balltimore - Not Pro\n";
+				//texty.text += "Balltimore - Not Pro\n";
+				texty.text += "\n";
 			}
 		}
 	}

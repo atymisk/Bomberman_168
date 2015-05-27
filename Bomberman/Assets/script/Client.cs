@@ -56,7 +56,7 @@ public class Game
 {
 	public List<Player> allPlayers = new List<Player>();
 	public List<Bomb> allBombs = new List<Bomb>();
-
+	public bool inprogress = false;
 	public int myIndex = -1;
 
 	public class Player
@@ -224,7 +224,7 @@ public static class Parser
 public class Client : MonoBehaviour
 {
 	// The Game state object. Gets overwritten.
-	public static Game game;
+	public static Game game = null;
 
 	// The port number for the remote device.
 	private const int port = 11000;
@@ -265,14 +265,9 @@ public class Client : MonoBehaviour
 		SceneEnter();
 	}
 
-	// Update is called once per frame
-	//private int timerCount = 0;
-	//private int timesSent = 0;
-	//Jeffrey
 	//using this to send and build messages given by player object
 	void FixedUpdate()
 	{
-//		Debug.Log(createdorjoined);
 		if(createdorjoined || gameover)
 		{
 			lobby.ready = false;
@@ -391,8 +386,8 @@ public class Client : MonoBehaviour
 		{
 			//contact server and tell it it's in the lobby
 			//Debug.Log("lobby sceneenter");
+			lobby.resetlobby();
 			lazySend ("Awaiting Game " + myuser + "|" + lobbyname);
-			
 			//Debug.Log("Client.cs lobbymsg: "+myuser);
 		}
 		else if (GameObject.Find ("reg") != null) 
@@ -466,6 +461,7 @@ public class Client : MonoBehaviour
 		else if (content.Contains("Game Over;"))
 		{
 			gameover = true;
+			game.inprogress = false;
 		}
 		else if(content.Contains("Game Start"))
 		{
@@ -527,6 +523,8 @@ public class Client : MonoBehaviour
 		gamestart = true;
 		// Create a new game object, overwriting the previous
 		game = new Game();
+		game.inprogress = true;
+		game.myIndex = myindex;
 		// Add the number of players
 		int numberOfPlayers = Convert.ToInt32(messageParts[1]);
 		for (int i = 0; i < numberOfPlayers; i++)
@@ -589,7 +587,7 @@ public class Client : MonoBehaviour
 		{
 			myindex = ind;
 		}
-		//Debug.Log("Client-Lobby: user: "  + user + " Index: " + ind);
+		//lobby.resetlobby();
 		lobby.setup(user,ind);
 	}
 	
@@ -826,10 +824,15 @@ public class Client : MonoBehaviour
 	{
 		if(connected)
 		{
+			if(game != null && game.inprogress)//if in the middle of a game
+			{
+				//Game.Player p = game.myself();
+				lazySend("Player;"+myindex+";F;"+0+";"+0+";"+0+";"+0+";"+lobbyname+";");//notify others i disconnected and am dead
+			}
 			lazySend("Disconnect Me " + myuser + "|" + lobbyname);
-			connected = false;
 			client.Shutdown(SocketShutdown.Both);
 			client.Close();
+			connected = false;
 			Debug.Log("Disconnected");
 		}
 	}

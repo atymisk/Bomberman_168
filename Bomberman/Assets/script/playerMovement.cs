@@ -91,6 +91,11 @@ public class playerMovement : MonoBehaviour {
 		}
 		return message_parts;
 	}
+	void OnApplicationQuit()
+	{
+		this.gameObject.SetActive(false);
+		this.alive = false;
+	}
 }
 
 

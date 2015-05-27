@@ -75,6 +75,13 @@ public class lobby : MonoBehaviour
 		//tell server, remove me from this lobby
 		Client.lazySend("Remove me " + Client.getUser() +"|"+c.getlobbyname());
 	}
+	public static void resetlobby()
+	{
+		for(int i = 0; i < lists.Length; i++)
+		{
+			lists[i] = "...";
+		}
+	}
 	void FixedUpdate () 
 	{
 		updatetxt();
