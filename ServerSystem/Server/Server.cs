@@ -64,25 +64,6 @@ public class Game
         full = (allPlayers.Count == 4);
         return full;
     }
-    // After lobby details are finished and a game starts...
-    public void GameLoop()
-    {
-        int timer = 0;
-        int maxTimerValue = 100; // change this value
-        // Continue looping until game ends and a winner is determined.
-        while (status != Status.ENDED)
-        {
-            if (timer == maxTimerValue)
-            {
-                timer = 0;
-                //sendPosition();
-                //sendBombs();
-            }
-            timer++;
-            //Implement game logic and stuffs here.
-
-        }
-    }
 
     private void sendToAll(string package)
     {
@@ -223,7 +204,26 @@ public class Game
             status = Status.DESTROYED;
         }
     }
+    public void removePlayer(string user)
+    {
+       // Console.WriteLine(">>>\tDisconnect request received by: " + user);
+        Player p = null;
+        foreach(Player ps in allPlayers)
+        {
+            if (ps.username == user)
+            {p = ps;}
+        }
 
+        if (p == null)
+        {return;}
+        Console.WriteLine("Player: " + user + "found, now removing");
+        p.status = Player.Status.DEAD;
+        if (this.status == Game.Status.PLAYING)
+        {checkGameStatus();}
+
+        allPlayers.Remove(p);//check the gameover scenario
+        lobby();
+    }
     public void lobby()//whenever theres anyone
     {
         for (int i = 0; i < allPlayers.Count && i < 4; i++)
@@ -235,8 +235,6 @@ public class Game
                 package = "P" + (i + 1) + "L: " + allPlayers[i].username
                 + "|" + allPlayers[i].x + "|" + allPlayers[i].z;
             }
-            //AsynchronousSocketListener.sendALL(package);
-            
             sendToAll(package);
         }
     }
@@ -279,10 +277,7 @@ public class Game
         if (nextindex < 4)//no more after position 3
         {
             allPlayers.Add(new Player(ip, x, z, nextindex, user));
-            //Console.WriteLine(user);
             nextindex++;
-            //lobby();//have the server send player info back to all clients
-            //return nextindex - 1;//send index to the client?
         }
     }
 
@@ -312,16 +307,12 @@ public class Game
     }
     public void checkready()
     {
-        if (readycount >= 2 && readycount == getplayerCount())
+        if (readycount >= 2 && readycount == getplayerCount())//game is ready to start
         {
-            //start countdown??
             Console.WriteLine("\n-----------------------Game Starting----------------------------\n");
+            this.status = Game.Status.PLAYING;
             AsynchronousSocketListener.sendALL("Game Start" + MessageHandler.semicolon + allPlayers.Count);
-            //Clear the msg buffer/queue
             MessageHandler.clearmessages();
-            //GameLoop();
-            //after countdown
-            //Console.WriteLine("Game has ended...????");
         }
     }
     public bool playerExists(string user)
@@ -830,7 +821,38 @@ public class MessageHandler
     }
     private static void disconnectrequest(Message m)
     {
-
+        //lobby, if it exists find it and remove the user
+        //username
+        string lobbyname = "";
+        string username = "";
+        //14
+        m.message = m.message.Substring(14);//username|lobbyname
+        int index = m.message.IndexOf("|");
+        username = m.message.Substring(0, index);
+        lobbyname = m.message.Substring(index + 1);
+        Console.WriteLine(">>>\tDisconnect request received by: " + username);
+        if (lobbyname.Length != 0)
+        {
+            Console.WriteLine(">>>\tPlayer was in a game");
+            games[lobbyname].removePlayer(username);
+        }
+        AsynchronousSocketListener.DisconnectClient(m.client);//disconnect the client from the server list
+        Console.WriteLine(">>>\tDisconnect complete");
+    }
+    private static void removefromlobby(Message m)
+    {
+        //10
+        m.message = m.message.Substring(10);
+        int index = m.message.IndexOf("|");
+        string username = m.message.Substring(0, index);
+        string lobby = m.message.Substring(index + 1);
+        games[lobby].removePlayer(username);
+        Console.WriteLine("User: " + username + " requested to leave lobby: " + lobby);
+        if (games[lobby].allPlayers.Count == 0)
+        {
+            Console.WriteLine("Deleting lobby: " + lobby);
+            games.Remove(lobby);
+        }
     }
     /*private static void bombACK(Message m) // for ACKing bomb: ACK;B;10;20;[strength];
     {
@@ -932,7 +954,7 @@ public class MessageHandler
                         }
                         else if (m.message.Contains("Disconnect Me "))
                         {
-                            
+                            disconnectrequest(m);
                         }
                         else if (m.message.Contains("Find game: "))
                         {
@@ -945,6 +967,10 @@ public class MessageHandler
                         else if (m.message.Contains("Joining "))
                         {
                             joingame(m);
+                        }
+                        else if (m.message.Contains("Remove me "))
+                        {
+                            removefromlobby(m);
                         }
                         else if (m.message.Contains("Registering: "))//Registering: username|password<EOF>
                         {
@@ -1052,6 +1078,11 @@ public class AsynchronousSocketListener
         Console.WriteLine("\nPress ENTER to continue...");
         Console.Read();
 
+    }
+
+    public static void DisconnectClient(Socket client)
+    {
+        allClients.Remove(client);
     }
 
     // When a new Client connects
@@ -1194,11 +1225,6 @@ public class AsynchronousSocketListener
         {
             directedSend(s,content);
         }
-    }
-
-    public static void disconnectClient(Socket c)
-    {
-
     }
 
     public static int Main(String[] args)

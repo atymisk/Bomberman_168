@@ -76,8 +76,8 @@ public class gameselect : MonoBehaviour
 	public void logout()
 	{
 		//tell client to logout/disconnect
-
-		Application.LoadLevel("LogInScreen");
+		Client.DisconnectMe();
+		Application.LoadLevel("Home");
 	}
 	public static void showpop()
 	{

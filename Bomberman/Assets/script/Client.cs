@@ -129,7 +129,7 @@ public class Game
 		allBombs.Add (new Bomb(x, z, strength));
 	}
 
-	public void addPlayer(string username)
+	public void addPlayer(string username)//called by startgame
 	{
 		int numberOfPlayers = allPlayers.Count;
 		float x, z;
@@ -286,6 +286,12 @@ public class Client : MonoBehaviour
 			gamestart = false;
 			Application.LoadLevel("Bomberman");//<-----Whatever scene that needs to be loaded
 		}
+	}
+
+	void OnApplicationQuit()
+	{
+		Debug.Log("QUITING INITIATE DISCONNECT");
+		DisconnectMe();
 	}
 	#endregion
 
@@ -671,6 +677,7 @@ public class Client : MonoBehaviour
 			Debug.Log("Not Connected!");
 			return;
 		}
+		Debug.Log(content);
 		// Convert the string data to byte data using ASCII encoding.
 		byte[] byteData = Encoding.ASCII.GetBytes(content+"<EOF>");
 		
@@ -699,7 +706,7 @@ public class Client : MonoBehaviour
 		recv_so.receiveDone.WaitOne(delay);
 	}
 
-	//made a nonstatic wrapper for the lazysend so that other objects can use the send function
+	//made a nonstatic wrapper for the lazysend so that other objects could use the send function
 	public void sendmsg(string content)
 	{
 		lazySend(content);
@@ -819,9 +826,11 @@ public class Client : MonoBehaviour
 	{
 		if(connected)
 		{
-			lazySend("Disconenct Me " + myuser);
+			lazySend("Disconnect Me " + myuser + "|" + lobbyname);
+			connected = false;
 			client.Shutdown(SocketShutdown.Both);
 			client.Close();
+			Debug.Log("Disconnected");
 		}
 	}
 	#endregion

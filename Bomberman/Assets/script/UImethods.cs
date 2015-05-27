@@ -7,6 +7,7 @@ public class UImethods : MonoBehaviour {
 	public InputField passfield;
 	public Text censortext;
 	public string pass="";
+
 	public void register()
 	{
 		Application.LoadLevel("Register");

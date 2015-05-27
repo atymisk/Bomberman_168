@@ -73,6 +73,7 @@ public class lobby : MonoBehaviour
 	public void leavelobby()
 	{
 		//tell server, remove me from this lobby
+		Client.lazySend("Remove me " + Client.getUser() +"|"+c.getlobbyname());
 	}
 	void FixedUpdate () 
 	{
