@@ -402,7 +402,11 @@ public class Client : MonoBehaviour
 				//connected = false;
 				GameObject.Find ("reg").GetComponentInChildren<register> ().dbg = "Register Failed";
 			}
-		} 
+		}
+		else if(GameObject.Find("gameselect")!=null)
+		{
+			lobbyname = "";
+		}
 
 		//-----------Anthony--------------------//
 	}

@@ -18,7 +18,7 @@ public class IP
 public class Settings
 {
     // Turn off database here!
-    public static bool database = false;
+    public static bool database = true;
 }
 
 // State object for reading client data asynchronously
@@ -413,7 +413,7 @@ public class DatabaseHandler
         //server = IP.mySQL;
         //server = "169.234.20.168";
         //server = "70.187.161.177";
-        server = IP.defaultIP4Anthony;
+        server = IP.mySQL;
         serveruser = "root";
         serverpass = "master";
         string connectionstring = "SERVER=" + server + ";PORT = 3306;"/* DATABASE=" + db + ";"*/ + "user id="
@@ -836,7 +836,7 @@ public class MessageHandler
         username = m.message.Substring(0, index);
         lobbyname = m.message.Substring(index + 1);
         Console.WriteLine(">>>\tDisconnect request received by: " + username);
-        if (lobbyname.Length != 0)
+        if (lobbyname.Length != 0 || games.ContainsKey(lobbyname))
         {
             Console.WriteLine(">>>\tPlayer was in a game");
             games[lobbyname].removePlayer(username);

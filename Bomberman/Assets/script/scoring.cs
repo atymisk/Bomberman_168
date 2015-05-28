@@ -10,7 +10,7 @@ public class scoring : MonoBehaviour {
 	Text texty;
 	string data;
 	List<Game.Player> allplayer = Client.game.allPlayers;
-	int index = -1;
+//	int index = -1;
 
 	void Start () {
 		texty = words.GetComponent<Text> ();
