@@ -25,8 +25,10 @@ Lobby:
 	
 	"This player it not ready " + index >>change to>> "This player is not ready " + index + "|" + lobbyname
 		->"P1R: not ready"
+
 	"Remove me " + index
-		->remove from game lobby and call lobby to refresh()
+		->"Lobby Refresh" //leads to wiping the list then getting a followup on the lobby
+
 //--------------------------------------------------------------------------------------------------	
 Login:
 	"Attempting Login: " + username +"|" + password

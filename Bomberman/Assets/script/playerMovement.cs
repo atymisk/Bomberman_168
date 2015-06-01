@@ -4,6 +4,8 @@ using System.Collections.Generic;
 
 public class playerMovement : MonoBehaviour {
 
+	public GameObject b;
+
 	public float speed;
 	Rigidbody rb, bomb, clone;
 	public Vector3 movement;
@@ -18,17 +20,21 @@ public class playerMovement : MonoBehaviour {
 	List<Game.Player> allplayer = Client.game.allPlayers;
 
 	int times;
-	void Start() {
+	void Start() 
+	{
 		rb = GetComponent<Rigidbody>();
 		clientid = Client.getIndex();
 	}
 
-	void Update() {
+	void Update() 
+	{
 
-		if (Input.GetButtonDown("Fire1") && !active && playerid == clientid && timer >= dropTime) {
+		if (Input.GetButtonDown("Fire1") && !active && playerid == clientid && timer >= dropTime) 
+		{
 			timer -= dropTime;
+			//GameObject creation =(GameObject) Instantiate (b, new Vector3 (rb.position[0], .5f, rb.position[2]), Quaternion.identity);
+			//creation.GetComponent<bombLogic> ().active = true;
 			Client.lazySend("Bomb;" + rb.position[0].ToString() + ";" + rb.position[2].ToString() + ";" + strength.ToString() + ";"+client.getlobbyname()+";");
-			//Client.lazySend(...)
 		}
 		if (timer < 100) {
 			timer++;;
@@ -36,10 +42,10 @@ public class playerMovement : MonoBehaviour {
 		Debug.Log (timer);
 	}
 	
-	void FixedUpdate () {
-
-
-		if (playerid == clientid && alive) {
+	void FixedUpdate () 
+	{
+		if (playerid == clientid && alive) 
+		{
 			//client.GetComponent<Client> ().x = rb.position [0];
 			//client.GetComponent<Client> ().z = rb.position [2];
 			float moveHorizontal = Input.GetAxis ("Horizontal");
@@ -57,14 +63,18 @@ public class playerMovement : MonoBehaviour {
 				Client.lazySend ("Player;" + index + ";T;" + xs + ";" + zs + ";" + rb.velocity.x + ";" + rb.velocity.y + ";"+client.getlobbyname()+";");
 				times = 0;
 			}
-		} else if (clientid == playerid && !alive) {
+		} 
+		else if (Client.connected && clientid == playerid && !alive) 
+		{
 			string index = playerid.ToString ();
 			string xs = rb.position [0].ToString ();
 			string zs = rb.position [2].ToString ();
 			Debug.Log ("Player;" + index + ";F;" + xs + ";" + zs + ";" + rb.velocity.x + ";" + rb.velocity.y + ";"+client.getlobbyname()+";");
 			Client.lazySend ("Player;" + index + ";F;" + xs + ";" + zs + ";" + rb.velocity.x + ";" + rb.velocity.y + ";"+client.getlobbyname()+";");
 			this.gameObject.SetActive (false);
-		} else {
+		} 
+		else if(Client.connected) 
+		{
 			rb.useGravity = false;
 
 			if (allplayer.Count >= playerid + 1 && allplayer[playerid].active){
@@ -77,7 +87,8 @@ public class playerMovement : MonoBehaviour {
 				movement = new Vector3 (velx, 0.0f, velz);
 				rb.velocity = (movement * speed);
 			}
-			else {
+			else 
+			{
 				this.gameObject.SetActive (false);
 			}
 		}

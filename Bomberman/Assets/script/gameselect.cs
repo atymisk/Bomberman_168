@@ -12,6 +12,7 @@ public class gameselect : MonoBehaviour
 	public GameObject popup;
 	public GameObject mypanel;
 	public Text err;
+	public Text username;
 	string gamename = "";
 
 	static bool found = false;
@@ -24,6 +25,7 @@ public class gameselect : MonoBehaviour
 		gamenotfound.SetActive(false);
 		mypanel.SetActive(false);
 		popup.SetActive(false);
+		username.text += Client.getUser();
 		//Client.lazySend("Get Games");//receive all games that exists
 	}
 

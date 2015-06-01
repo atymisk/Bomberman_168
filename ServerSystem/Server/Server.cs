@@ -220,13 +220,9 @@ public class Game
         {return;}
         Console.WriteLine("Player: " + user + " found, now removing");
         p.status = Player.Status.DEAD;
-       /* if (this.status == Game.Status.PLAYING)
-        {
-            checkGameStatus();
-            lobby();
-        }*/
 
         allPlayers.Remove(p);//check the gameover scenario
+        sendToAll("Lobby Refresh");
         lobby();
     }
     public void lobby()//whenever theres anyone
@@ -648,6 +644,7 @@ public class MessageHandler
         else
         {
             AsynchronousSocketListener.Send(m.client,"Login Failed");
+            AsynchronousSocketListener.DisconnectClient(m.client);
         }
          
     }

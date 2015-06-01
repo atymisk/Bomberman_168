@@ -7,18 +7,18 @@ using System.Net;
 public class lobby : MonoBehaviour 
 {
 	public Text[] ptxt = new Text[4];
+	public Text title;
+	public Text username;
 	public static string[] lists = new string[4];
 	public Client c;
 	public static bool ready = false;
 	public static bool loaded = false;
 	private string lobbyname = "";
-	//not called automatically
-	public static void Start ()
+
+	public void Start ()
 	{
-		lists[0] = "...Awaiting Player";
-		lists[1] = "...Awaiting Player";
-		lists[2] = "...Awaiting Player";
-		lists[3] = "...Awaiting Player";
+		title.text += c.getlobbyname();
+		username.text += Client.getUser();
 	}
 
 	//method reacts to the button press, will send a message to the server say it's ready

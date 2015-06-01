@@ -285,7 +285,7 @@ public class Client : MonoBehaviour
 
 	void OnApplicationQuit()
 	{
-		Debug.Log("QUITING INITIATE DISCONNECT");
+		Debug.Log("CLOSING GAME");
 		DisconnectMe();
 	}
 	#endregion
@@ -340,18 +340,11 @@ public class Client : MonoBehaviour
             // Send test data to the remote device.
             Send(client, "This is a test<EOF>", send_so);
 			send_so.sendDone.WaitOne(/*5000*/);
-			// Send test data to the remote device.
-            Send(client, "Test 2<EOF>", send_so);
-			send_so.sendDone.WaitOne(/*5000*/);
-			// Send test data to the remote device.
-            Send(client, "Third test.<EOF>", send_so);
-			send_so.sendDone.WaitOne(/*5000*/);
 			
 			// Receive the response from the remote device.
             Receive(recv_so);
             recv_so.receiveDone.WaitOne(1000);
-            // Write the response to the console.
-            //Debug.Log("Response received : " + recv_so.response);
+
 			connected = true;
 			SceneEnter();//check the scene once a connection has been established
         }
@@ -385,8 +378,7 @@ public class Client : MonoBehaviour
 		else if (GameObject.Find ("lobby") != null) 
 		{
 			//contact server and tell it it's in the lobby
-			//Debug.Log("lobby sceneenter");
-			lobby.resetlobby();
+			lobby.resetlobby();//reset the list of names everytime it moves into scene
 			lazySend ("Awaiting Game " + myuser + "|" + lobbyname);
 			//Debug.Log("Client.cs lobbymsg: "+myuser);
 		}
@@ -395,20 +387,19 @@ public class Client : MonoBehaviour
 			//Debug.Log("Register page");
 			registerinfo += GameObject.Find ("reg").GetComponentInChildren<register> ().getsendinfo ();
 			lazySend (registerinfo);
-			if (registered) {
-				//connected = true;
-				Application.LoadLevel ("Lobby");
-			} else {
-				//connected = false;
+			if (registered) 
+			{
+				Application.LoadLevel ("GameSelect");
+			} 
+			else 
+			{
 				GameObject.Find ("reg").GetComponentInChildren<register> ().dbg = "Register Failed";
 			}
 		}
 		else if(GameObject.Find("gameselect")!=null)
 		{
 			lobbyname = "";
-		}
-
-		//-----------Anthony--------------------//
+		}		
 	}
 
 	// When client connects with the server
@@ -505,8 +496,10 @@ public class Client : MonoBehaviour
 		{
 			lobbyUpdateNotReady(content);
 		}
-
-
+		else if(content =="Lobby Refresh")
+		{
+			lobby.resetlobby();
+		}
 		else if(content.Contains("Login Failed"))
 		{
 			loginFailed();
@@ -550,9 +543,10 @@ public class Client : MonoBehaviour
 	
 	private static void loginFailed()
 	{
+		connected = false;
+		loggedin = false;
 		Debug.Log("Login Failed");
 		GameObject.Find("login").GetComponentInChildren<login>().wipe();
-		connected = false;
 	}
 	
 	private static void registrationSuccess(string content)
@@ -591,7 +585,7 @@ public class Client : MonoBehaviour
 		{
 			myindex = ind;
 		}
-		//lobby.resetlobby();
+		//lobby.resetlobby();//<- this causes only the last player who joined to show only their name only
 		lobby.setup(user,ind);
 	}
 	
@@ -602,7 +596,6 @@ public class Client : MonoBehaviour
 		Debug.Log("Client.cs ready: "+ind);
 		lobby.readyupdates(ind);
 	}
-	
 	private static void lobbyUpdateNotReady(string content)
 	{
 		int ind = int.Parse(content.Substring(1,1));//get the player number from the msg
