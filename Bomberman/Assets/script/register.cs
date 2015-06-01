@@ -2,6 +2,7 @@
 using System.Collections;
 using UnityEngine.UI;
 
+
 public class register : MonoBehaviour {
 	public InputField user;//12 characters max
 	public InputField pass;//6 min, 12 max
@@ -24,7 +25,7 @@ public class register : MonoBehaviour {
 		u = pass.text;
 		ok = (u.Length >= 6 && u.Length <=12);//need to check against special characters
 		//hash u(the password)
-		tosend += u;
+        tosend += MD5Manager.hashPassword(u);
 		if(!ok)
 		{
 			dbg += "Password length invalid\n";

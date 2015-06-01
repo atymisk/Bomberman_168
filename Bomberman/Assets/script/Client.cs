@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Text;
 
+
 public class IP
 {
 	public enum Address { ANTHONY, FAYE, JEFFREY, MYSQL, LOCALHOST };
@@ -18,6 +19,7 @@ public class IP
 	// Whose IP Address are we using for the server?
     public static Address Server = Address.LOCALHOST;
 }
+
 
 // State object for receiving data from remote device.
 public class StateObject
@@ -48,8 +50,6 @@ public class StateObject
     // The response from the remote device.
     public String response = String.Empty;
 }
-
-
 
 
 public class Game

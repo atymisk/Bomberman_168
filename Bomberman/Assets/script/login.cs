@@ -10,7 +10,7 @@ public class login : MonoBehaviour {
 	public void submit()
 	{
 		//hash password
-		tosend = user.text + "|" + p.text;
+		tosend = user.text + "|" + MD5Manager.hashPassword(p.text);
 	}
 	public string strsend()
 	{
