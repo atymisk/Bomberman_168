@@ -11,7 +11,7 @@ using System.Text;
 public class IP
 {
 	public enum Address { ANTHONY, FAYE, JEFFREY, MYSQL, LOCALHOST };
-	public const string Anthony = "169.234.2.124";
+	public const string Anthony = "169.234.21.76";
     public const string Faye = "169.234.12.76";
 	public const string Jeffrey = "169.234.13.110";
 	public const string mySQL = IP.Anthony;
