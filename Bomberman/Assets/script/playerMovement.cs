@@ -7,7 +7,7 @@ public class playerMovement : MonoBehaviour {
 	public float speed;
 	Rigidbody rb, bomb, clone;
 	public Vector3 movement;
-	public int timer = 100;
+	public int timer;
 	public int dropTime;
 	public int strength;
 	public int playerid, clientid;
@@ -30,6 +30,10 @@ public class playerMovement : MonoBehaviour {
 			Client.lazySend("Bomb;" + rb.position[0].ToString() + ";" + rb.position[2].ToString() + ";" + strength.ToString() + ";"+client.getlobbyname()+";");
 			//Client.lazySend(...)
 		}
+		if (timer < 100) {
+			timer++;;
+		}
+		Debug.Log (timer);
 	}
 	
 	void FixedUpdate () {
