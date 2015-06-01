@@ -9,5 +9,4 @@ public class frequency : MonoBehaviour {
 			Destroy(this.gameObject);
 		}
 	}
-
 }
