@@ -82,24 +82,14 @@ public class playerMovement : MonoBehaviour {
 			}
 		}
 	}
-	public List<string> split(string things)
-	{
-		List<string> message_parts = new List<string>();
-		string[] strings = things.Split(';');
-		foreach (string s in strings)//Null reference exception here
-		{
-			if (s != "")
-			{
-				message_parts.Add(s);
-			}
-		}
-		return message_parts;
-	}
+
+
 	void OnApplicationQuit()
 	{
 		this.gameObject.SetActive(false);
 		this.alive = false;
 	}
+
 }
 
 

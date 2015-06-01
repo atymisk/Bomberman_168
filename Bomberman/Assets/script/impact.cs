@@ -14,7 +14,7 @@ public class impact : MonoBehaviour {
 			Destroy (this.gameObject);
 		}
 		if (other.gameObject.tag == "bomb") {
-			//other.gameObject.GetComponent<bombLogic>().timer = 1;
+			other.gameObject.GetComponent<bombLogic>().timer = 1;
 			//Debug.Log("kk");
 		}
 	}
