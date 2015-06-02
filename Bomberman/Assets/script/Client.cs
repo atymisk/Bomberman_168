@@ -64,6 +64,8 @@ public class Client : MonoBehaviour
 	private static bool gameover = false;
 	private static bool createdorjoined = false;
 
+	private static string[] usernames = new string[4];
+
 
 	#region Unity Stuff: Start() & FixedUpdate()
 
@@ -183,6 +185,7 @@ public class Client : MonoBehaviour
 		{
 			//contact server and tell it it's in the lobby
 			lobby.resetlobby();//reset the list of names everytime it moves into scene
+			usernames = new string[4];
 			lazySend ("Awaiting Game " + myuser + "|" + lobbyname);
 			//Debug.Log("Client.cs lobbymsg: "+myuser);
 		}
@@ -317,6 +320,15 @@ public class Client : MonoBehaviour
 		{
 			registrationFailed();
 		}
+		else if (content.Contains("<BOF>Chat;"))
+		{
+			addChat(content.Substring(content.IndexOf(";")+1));
+		}
+	}
+
+	private static void addChat(string content)
+	{
+		chat.chatText += content + "\n";
 	}
 
 	private static void startGame(string content)
@@ -331,7 +343,7 @@ public class Client : MonoBehaviour
 		int numberOfPlayers = Convert.ToInt32(messageParts[1]);
 		for (int i = 0; i < numberOfPlayers; i++)
 		{
-			game.addPlayer ("");
+			game.addPlayer (usernames[i]);
 		}
 	}
 
@@ -392,6 +404,8 @@ public class Client : MonoBehaviour
 		}
 		//lobby.resetlobby();//<- this causes only the last player who joined to show only their name only
 		lobby.setup(user,ind);
+
+		usernames[ind] = user;
 	}
 	
 	private static void lobbyUpdateReady(string content)

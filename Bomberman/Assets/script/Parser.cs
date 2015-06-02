@@ -43,4 +43,18 @@ public static class Parser
 		}
 		return messageParts;
 	}
+
+	public static List<string> split(string content, char c, bool clean)
+	{
+		string[] strings = content.Split(c);
+		List<string> parts = new List<string>();
+		foreach (string s in strings)
+		{
+			if (((clean) && (s != "")) || (!clean))
+			{
+				parts.Add(s);
+			}
+		}
+		return parts;
+	}
 }

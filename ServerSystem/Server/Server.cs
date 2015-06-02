@@ -19,7 +19,7 @@ public class IP
 public class Settings
 {
     // Turn off database here!
-    public static bool database = true;
+    public static bool database = false;
 }
 
 
@@ -578,6 +578,7 @@ public class MessageHandler
 
     public static string[] EOF = new string[] { "<EOF>" };
     public static char semicolon = ';';
+    public const string ChatHeader = "<BOF>Chat;";
 
     public class Message
     {
@@ -880,6 +881,11 @@ public class MessageHandler
         games[lobbyname].playerNotready(index);
     }
 
+    private static void updateChat(Message m)
+    {
+        AsynchronousSocketListener.sendALL(m.message);
+    }
+
     private static void cleanEOF(Message m)
     {
         // Separate all Message contents by <EOF> tag.
@@ -937,6 +943,10 @@ public class MessageHandler
                         {
                             awaitingGame(m);
                         }
+                        else if (m.message.Contains(ChatHeader))
+                        {
+                            updateChat(m);
+                        }
                         else if (m.message.Contains(";"))//happens on "This is a test" beginning messages, changing
                         {
                             m.split();//Null reference exception
@@ -988,7 +998,6 @@ public class MessageHandler
                         {
                             playerisnotready(m);
                         }
-
                     }
                     catch (Exception e)
                     {
