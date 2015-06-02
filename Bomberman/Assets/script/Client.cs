@@ -133,8 +133,8 @@ public class Game
 	{
 		int numberOfPlayers = allPlayers.Count;
 		float x, z;
-		Debug.Log ("Generating player");
-		Debug.Log(numberOfPlayers);
+		//Debug.Log ("Generating player");
+		//Debug.Log(numberOfPlayers);
 		switch (numberOfPlayers)
 		{
 		case 0:
@@ -169,7 +169,7 @@ public class Game
 		for (int messageindex = 1; messageindex < messageParts.Count; messageindex+=7)
 		{
 			allPlayers[playerNumber].active = Parser.convertBool(messageParts[messageindex+1]);
-			Debug.Log(allPlayers[playerNumber].active);
+			//Debug.Log(allPlayers[playerNumber].active);
 			allPlayers[playerNumber].setPosition(
 				float.Parse(messageParts[messageindex+2]), float.Parse(messageParts[messageindex+3]), float.Parse(messageParts[messageindex+4]), float.Parse(messageParts[messageindex+5]));
 			playerNumber++;
@@ -438,7 +438,7 @@ public class Client : MonoBehaviour
 			return;
 		}
 		
-		Debug.Log("Parsing "+content);
+		//Debug.Log("Parsing "+content);
 		
 		if(content.Contains("Login Success"))//Login Success test<EOF>
 		{
@@ -617,9 +617,9 @@ public class Client : MonoBehaviour
 	}
 	private static void creatinggame(string content)
 	{
-		Debug.Log("createdorjoined " + createdorjoined);
+		//Debug.Log("createdorjoined " + createdorjoined);
 		createdorjoined = true;
-		Debug.Log("createdorjoined " + createdorjoined);
+		//Debug.Log("createdorjoined " + createdorjoined);
 		lobbyname = content.Substring(13);//get the lobbyname
 		Debug.Log("CREATED " + lobbyname);
 	}
@@ -672,7 +672,7 @@ public class Client : MonoBehaviour
 			Debug.Log("Not Connected!");
 			return;
 		}
-		Debug.Log(content);
+		//Debug.Log(content);
 		// Convert the string data to byte data using ASCII encoding.
 		byte[] byteData = Encoding.ASCII.GetBytes(content+"<EOF>");
 		
@@ -752,13 +752,13 @@ public class Client : MonoBehaviour
 				{
 					state.flushSB();
 					
-					Debug.Log("Received: \t"+content);
+					//Debug.Log("Received: \t"+content);
 
 					// Break messages into multiple ones and parse them
 					List<string> messages = Parser.cleanEOF(content);
 					foreach (string message in messages)
 					{
-						Debug.Log("Message: " + message);
+						//Debug.Log("Message: " + message);
 						parseMessage(message);
 					}
 
