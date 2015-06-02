@@ -8,32 +8,19 @@ using System.Threading;
 using System.Text;
 
 
-public class IP
-{
-	public enum Address { ANTHONY, FAYE, JEFFREY, MYSQL, LOCALHOST };
-	public const string Anthony = "169.234.21.76";
-    public const string Faye = "169.234.12.76";
-	public const string Jeffrey = "169.234.13.110";
-	public const string mySQL = IP.Anthony;
-
-	// Whose IP Address are we using for the server?
-    public static Address Server = Address.LOCALHOST;
-}
-
-
 // State object for receiving data from remote device.
 public class StateObject
 {
-    // Client socket.
+    // Client socket
     public Socket workSocket = null;
 
-    // Size of receive buffer.
+    // Size of receive buffer
     public const int BufferSize = 256;
 
-    // Receive buffer.
+    // Receive buffer
     public byte[] buffer = new byte[BufferSize];
 
-    // Received data string.
+    // Received data string
     public StringBuilder sb = new StringBuilder();
 
 	// Flush the StringBuilder so it's now empty
@@ -42,204 +29,29 @@ public class StateObject
 		sb = new StringBuilder();
 	}
 
-    // ManualResetEvent now changed to AutoResetEvent
+    // AutoResetEvents for connection and receiving and sending messages
     public AutoResetEvent connectDone = new AutoResetEvent(false);
     public AutoResetEvent receiveDone = new AutoResetEvent(false);
     public AutoResetEvent sendDone = new AutoResetEvent(false);
 
-    // The response from the remote device.
-    public String response = String.Empty;
-}
-
-
-public class Game
-{
-	public List<Player> allPlayers = new List<Player>();
-	public List<Bomb> allBombs = new List<Bomb>();
-	public bool inprogress = false;
-	public int myIndex = -1;
-
-	public class Player
-	{
-		public string username;
-		public float x;
-		public float z;
-		public float xv;
-		public float zv;
-		public int playerIndex = -1;
-		public bool active = true;
-
-		public Player(string username, float x, float z)
-		{
-			this.x = x;
-			this.z = z;
-			this.username = username;
-		}
-
-		public void setPosition(float x, float z, float xv, float zv)
-		{
-			this.x = x;
-			this.z = z;
-			//Jeffrey modified to also take and store in velocity for dead reckoning
-			this.xv = xv;
-			this.zv = zv;
-		}
-	}
-
-	public class Bomb
-	{
-		public float x;
-		public float z;
-		public int strength;
-
-		public Bomb(float x, float z, int strength)
-		{
-			this.x = x;
-			this.z = z;
-			this.strength = strength;
-		}
-	}
-
-	public Player myself()
-	{
-		return allPlayers[myIndex];
-	}
-
-	public Bomb popBomb()
-	{
-		Bomb bomb = null;
-		if (allBombs.Count > 0)
-		{
-			bomb = allBombs[0];
-			allBombs.Remove (bomb);
-		}
-		return bomb;
-	}
-
-	public void addBomb(List<string> messageParts)
-	{
-		if (messageParts[0] != "Bomb")
-		{
-			return;
-		}
-
-		float x = Convert.ToSingle(messageParts[1]);
-		float z = Convert.ToSingle(messageParts[2]);
-		int strength = Convert.ToInt32(messageParts[3]);
-		allBombs.Add (new Bomb(x, z, strength));
-	}
-
-	public void addPlayer(string username)//called by startgame
-	{
-		int numberOfPlayers = allPlayers.Count;
-		float x, z;
-		//Debug.Log ("Generating player");
-		//Debug.Log(numberOfPlayers);
-		switch (numberOfPlayers)
-		{
-		case 0:
-			x = -9; z = -9;
-			break;
-		case 1:
-			x = 9; z = 9;
-			break;
-		case 2:
-			x = 9; z = -9;
-			break;
-		case 3:
-			x = -9; z = 9;
-			break;
-		default:
-			x = -9001; z = -9001;
-			break;
-		}
-
-		allPlayers.Add (new Player(username, x, z));
-		allPlayers[numberOfPlayers].playerIndex = numberOfPlayers;
-	}
-
-	public void updatePlayers(List<string> messageParts)
-	{
-		if (messageParts[0] != "Player")
-		{
-			return;
-		}
-
-		int playerNumber = 0;
-		for (int messageindex = 1; messageindex < messageParts.Count; messageindex+=7)
-		{
-			allPlayers[playerNumber].active = Parser.convertBool(messageParts[messageindex+1]);
-			//Debug.Log(allPlayers[playerNumber].active);
-			allPlayers[playerNumber].setPosition(
-				float.Parse(messageParts[messageindex+2]), float.Parse(messageParts[messageindex+3]), float.Parse(messageParts[messageindex+4]), float.Parse(messageParts[messageindex+5]));
-			playerNumber++;
-		}
-	}
-}
-
-public static class Parser
-{
-	private static string[] EOF = new string[]{"<EOF>"};
-
-	public static List<string> cleanEOF(string content)
-	{
-		//clean and put into buffer
-		string[] messages = content.Split(EOF,StringSplitOptions.None);//EOF taken out
-		List<string> listOfMessages = new List<string>();
-		foreach (string message in messages)
-		{
-			if (message != "")
-			{
-				listOfMessages.Add (message);
-			}
-		}
-		return listOfMessages;
-	}
-
-	public static bool convertBool(string tf)
-	{
-		if (tf == "T")
-		{
-			return true;
-		}
-		return false;
-	}
-
-	public static List<string> split(string content)
-	{
-		string[] strings = content.Split(';');
-		List<string> messageParts = new List<string>();
-		foreach (string s in strings)
-		{
-			if (s != "")
-			{
-				messageParts.Add(s);
-			}
-		}
-		return messageParts;
-	}
 }
 
 
 public class Client : MonoBehaviour
 {
-	// The Game state object. Gets overwritten.
+	// The Game state object. Gets overwritten later on.
 	public static Game game = null;
 
 	// The port number for the remote device.
 	private const int port = 11000;
 	// Socket and IP information
 	private static Socket client;
-	private static IPEndPoint remoteEP;
-	private static IPHostEntry ipHostInfo;
-	private static IPAddress ipAddress;
 	private static StateObject send_so;
 	private static StateObject recv_so;
 
 	// Registration & LogIn info #Anthony
-	string registerinfo = "Registering: ";
+	const string registerHeader = "Registering: ";
     const string loginHeader = "Attempting Login: ";
-	string logininfo = "";
 	private static string myuser = "";
 	private static string lobbyname = "";
 	private static int myindex = -1;
@@ -252,8 +64,10 @@ public class Client : MonoBehaviour
 	private static bool gameover = false;
 	private static bool createdorjoined = false;
 
+
 	#region Unity Stuff: Start() & FixedUpdate()
 
+	// Set up so that the game can run in background
     void Awake()
     {
         Application.runInBackground = true;
@@ -305,23 +119,13 @@ public class Client : MonoBehaviour
         {
             // Establish the remote endpoint for the socket.
             // The name of the remote device is "host.contoso.com".
-            ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
+            //ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
             
 			// You don't have to touch this. Determine server IP address:
-			switch (IP.Server)
-			{
-			case IP.Address.ANTHONY:
-				ipAddress = IPAddress.Parse(IP.Anthony); break;
-			case IP.Address.JEFFREY:
-				ipAddress = IPAddress.Parse(IP.Jeffrey); break;
-			case IP.Address.FAYE:
-				ipAddress = IPAddress.Parse(IP.Faye); break;
-			default:
-				ipAddress = ipHostInfo.AddressList[0]; break;
-			}
-			//ipAddress = ipHostInfo.AddressList[0];
+			IPAddress ipAddress = IPAddress.Parse(IPManager.getServerIP());
+
 			// Make the connection
-            remoteEP = new IPEndPoint(ipAddress, port);
+			IPEndPoint remoteEP = new IPEndPoint(ipAddress, port);
 
             // Create a TCP/IP socket.
             client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -366,7 +170,7 @@ public class Client : MonoBehaviour
 		// ------------------Anthony------------------------//
 		if (GameObject.Find ("login") != null) 
 		{
-			logininfo = loginHeader + GameObject.Find ("login").GetComponentInChildren<login> ().strsend ();
+			string logininfo = loginHeader + GameObject.Find ("login").GetComponentInChildren<login> ().strsend ();
 			specifiedSend(logininfo, 1000);
 			//lazySend(logininfo);
 			if (connected && loggedin) 
@@ -385,8 +189,9 @@ public class Client : MonoBehaviour
 		else if (GameObject.Find ("reg") != null) 
 		{
 			//Debug.Log("Register page");
-			registerinfo += GameObject.Find ("reg").GetComponentInChildren<register> ().getsendinfo ();
-			lazySend (registerinfo);
+			string registerInfo =
+				registerHeader + GameObject.Find ("reg").GetComponentInChildren<register> ().getsendinfo ();
+			lazySend(registerInfo);
 			if (registered) 
 			{
 				Application.LoadLevel ("GameSelect");

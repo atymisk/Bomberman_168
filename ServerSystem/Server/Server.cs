@@ -9,11 +9,11 @@ using MySql.Data.MySqlClient;
 
 public class IP
 {
-    public const string Anthony = "169.234.2.124";
+    public const string Anthony = "169.234.38.207";
     public const string Faye = "169.234.9.207";
     public const string Jeffrey = "169.234.22.25";
-    public const string defaultIP4Anthony = "127.0.0.1";
-    public const string mySQL = defaultIP4Anthony;
+    public const string LocalHost = "127.0.0.1";
+    public const string mySQL = Anthony;
 }
 
 public class Settings
