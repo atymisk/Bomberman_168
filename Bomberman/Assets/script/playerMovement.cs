@@ -129,7 +129,7 @@ public class playerMovement : MonoBehaviour {
 				movement = new Vector3 (velx, 0.0f, velz);
 				//1.1 seems to bethe safest approcimation before it becomes 
 				// bizarre looking
-				rb.velocity = (movement * 1.1);
+				rb.velocity = (movement * 1.1f);
 			}
 			else 
 			{

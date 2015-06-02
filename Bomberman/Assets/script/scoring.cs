@@ -2,7 +2,16 @@
 using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
-
+/// <summary>
+/// scoreboard script
+/// scoreboard script reads off of the client player list
+/// every object in the player list is read and continuously
+/// rewrites the the board with updated information
+/// it writes in the playerid and then reads the id's alive tag
+/// if the player is alive then they are read as active, else WRECKT
+/// players who are disconnected have their tags set to dead server side
+/// and so are read as WRECKT
+/// </summary>
 public class scoring : MonoBehaviour {
 
 	public GameObject words;
