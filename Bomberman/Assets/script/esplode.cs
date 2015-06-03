@@ -21,7 +21,7 @@ public class esplode : MonoBehaviour {
 		//Debug.Log(timer % 700 == 0 && active);
 		if(active)
 		{
-			if(timer % 25 == 0)
+			if(timer % 85 == 0)
 			{
 				Debug.Log("meep");
 				timer = 0;
